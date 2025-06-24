@@ -1,0 +1,62 @@
+# General Python ignores
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.env
+*.log
+*.sqlite3
+*.db
+*.lock
+.python-version
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backend-specific ignores
+backend/__pycache__/
+backend/__init__.py
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/banco.db  # Ignore the database file if it's generated dynamically
+backend/alembic/versions/*.pyc
+
+# Frontend-specific ignores
+frontend/__pycache__/
+frontend/.ruff_cache
+frontend/__init__.py
+frontend/*.pyc
+frontend/*.pyo
+frontend/*.pyd
+frontend/token.txt  # Ignore token files for security reasons
+frontend/tests/__pycache__/
+
+# Node.js (if applicable for frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ignore coverage reports
+.coverage
+htmlcov/
+coverage.xml
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore token
+token.txt
