@@ -1,0 +1,16 @@
+# .streamlit/config.toml
+
+[theme]
+# Cores
+primaryColor="008080"           # Cor principal para botões, sliders, etc. (Vermelho Escuro)
+backgroundColor="#d3d3d3"        # Cor de fundo da página (Cinza Claro)
+secondaryBackgroundColor="#FFFFFF" # Cor de fundo de containers e sidebars (Branco)
+textColor="#262730"              # Cor do texto principal (Preto Quase Total)
+
+# Fontes
+font="verdana"                # Tipos de fonte (pode ser "sans serif", "serif", "monospace", ou uma fonte específica se carregada via CSS)
+# base font (pode ser "sans serif", "serif", "monospace", "courier new", "times new roman", "verdana", "arial", "helvetica", "georgia", etc.)
+
+# Outras configurações (opcionais)
+# enableCORS = true
+# deprecationWarning = false
