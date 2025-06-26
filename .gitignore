@@ -29,6 +29,7 @@ backend/*.pyo
 backend/*.pyd
 backend/banco.db  # Ignore the database file if it's generated dynamically
 backend/alembic/versions/*.pyc
+backend/alembic/__init__.py
 
 # Frontend-specific ignores
 frontend/__pycache__/
