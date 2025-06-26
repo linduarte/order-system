@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from passlib.context import CryptContext
 from backend.auth_routes import auth_router
 from backend.order_routes import order_router
-# from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+
+
+
 
 
 app = FastAPI()

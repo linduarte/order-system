@@ -4,10 +4,11 @@ from backend.dependencies import pegar_sessao, verificar_token
 from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.schemas import UsuarioSchema, LoginSchema
 from sqlalchemy.orm import Session
-from jose import jwt
+from jose import  jwt ,JWTError
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
+import logging
 
 # Criação do contexto bcrypt para hashing e verificação de senhas
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -16,25 +17,63 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def criar_token(
-    id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-):
-    data_expiracao = datetime.now(timezone.utc) + duracao_token
-    dic_info = {"sub": str(id_usuario), "exp": data_expiracao}
-    jwt_codificado = jwt.encode(dic_info, SECRET_KEY, algorithm=ALGORITHM)
-    return jwt_codificado
+def criar_token(id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
+    """
+    Gera um token JWT com informações do usuário e tempo de expiração.
+
+    :param id_usuario: O ID do usuário para incluir no payload do token.
+    :param duracao_token: A duração do token (padrão 30 minutos).
+    :return: O token JWT codificado.
+    """
+    try:
+        data_expiracao = datetime.now(timezone.utc) + duracao_token
+        dic_info = {
+            "sub": str(id_usuario),  # O 'sub' é usado para identificar o usuário
+            "exp": data_expiracao,  # Definir a data de expiração do token
+        }
+        jwt_codificado = jwt.encode(dic_info, SECRET_KEY, algorithm=ALGORITHM)  # Codifica o token com a chave secreta
+        return jwt_codificado
+    except JWTError as e:
+        logging.error(f"Erro ao criar o token JWT: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao criar o token")
+    except Exception as e:
+        logging.error(f"Erro inesperado ao criar o token JWT: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno inesperado")
 
 
-print(f"SECRET_KEY: {SECRET_KEY}, ALGORITHM: {ALGORITHM}")
+
 
 
 def autenticar_usuario(email, senha, session):
-    usuario = session.query(Usuario).filter(Usuario.email == email).first()
-    if not usuario:
-        return False
-    elif not bcrypt_context.verify(senha, usuario.senha):
-        return False
-    return usuario
+    """
+    Autentica o usuário verificando o email e a senha.
+    
+    :param email: O email do usuário.
+    :param senha: A senha do usuário.
+    :param session: A sessão do banco de dados para consulta.
+    :return: O usuário autenticado ou False se falhar.
+    """
+    try:
+        # Busca o usuário no banco de dados
+        usuario = session.query(Usuario).filter(Usuario.email == email).first()
+        
+        # Se o usuário não for encontrado, retorna erro
+        if not usuario:
+            logging.warning(f"Tentativa de login com email não encontrado: {email}")
+            raise HTTPException(status_code=400, detail="Usuário não encontrado ou credenciais inválidas")
+        
+        # Verifica a senha
+        if not bcrypt_context.verify(senha, usuario.senha):
+            logging.warning(f"Tentativa de login falhada com senha incorreta para o email: {email}")
+            raise HTTPException(status_code=400, detail="Usuário não encontrado ou credenciais inválidas")
+        
+        # Se tudo der certo, retorna o usuário
+        return usuario
+    
+    except Exception as e:
+        logging.error(f"Erro ao tentar autenticar usuário {email}: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao realizar a autenticação")
+
 
 
 @auth_router.get("/")
@@ -75,19 +114,25 @@ async def criar_conta(
 # login -> email e senha -> token JWT (Json Web Token) ahuyba786dabd86a5vdba865dvad786and
 @auth_router.post("/login")
 async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sessao)):
-    usuario = autenticar_usuario(login_schema.email, login_schema.senha, session)
-    if not usuario:
-        raise HTTPException(
-            status_code=400, detail="Usuário não encontrado ou credenciais inválidas"
-        )
-    else:
+    try:
+        usuario = autenticar_usuario(login_schema.email, login_schema.senha, session)
+        if not usuario:
+            raise HTTPException(
+                status_code=400, detail="Usuário não encontrado ou credenciais inválidas"
+            )
+
         access_token = criar_token(usuario.id)
         refresh_token = criar_token(usuario.id, duracao_token=timedelta(days=7))
+
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
             "token_type": "Bearer",
         }
+    except Exception as e:
+        logging.error(f"Erro no login: {e}")
+        raise HTTPException(status_code=500, detail="Erro interno ao realizar login")
+
 
 
 @auth_router.post("/login-form")
