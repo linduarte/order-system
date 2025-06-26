@@ -114,12 +114,20 @@ def run():
             messagebox.showerror("Erro", str(e))
 
     def listar_pedidos():
-        resultado = api_get("/pedidos/listar/pedidos-usuario")
+        id_usuario = get_user_id()  # Get the user ID from the token
+        if not id_usuario:
+            messagebox.showerror("Erro", "Usuário não encontrado.")
+            return
+
+        resultado = api_get(f"/pedidos/listar?usuario_id={id_usuario}")  # Pass usuario_id
         if resultado:
             pedidos = "\n".join(
                 [f"ID {p['id']} - Status: {p['status']}" for p in resultado]
             )
             messagebox.showinfo("Pedidos", pedidos)
+        else:
+            messagebox.showinfo("Pedidos", "Nenhum pedido encontrado.")  # Handle empty result
+            
 
     def adicionar_item():
         id_pedido = simpledialog.askstring("Adicionar Item", "ID do Pedido:")

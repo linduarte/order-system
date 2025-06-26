@@ -1,11 +1,12 @@
+import os
+import httpx
 import ttkbootstrap as tb
 from ttkbootstrap.constants import SUCCESS
 from tkinter import messagebox
-import httpx
-from dashboard import run  # Corrigido aqui!
-import os
+from dashboard import run  # Certo!
+from typing import Optional
 
-# Caminho absoluto do token
+# Caminho absoluto para salvar o token
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TOKEN_PATH = os.path.join(BASE_DIR, "token.txt")
 API_URL = "http://localhost:8000"
@@ -16,6 +17,7 @@ class LoginApp(tb.Window):
         super().__init__(themename="superhero")
         self.title("Login - Sistema de Pedidos")
         self.geometry("400x250")
+        self.resizable(False, False)
         self.create_widgets()
 
     def create_widgets(self):
@@ -32,35 +34,42 @@ class LoginApp(tb.Window):
         ).pack(pady=15)
 
     def fazer_login(self):
-        email = self.entry_email.get()
-        senha = self.entry_senha.get()
+        email = self.entry_email.get().strip()
+        senha = self.entry_senha.get().strip()
 
-        print("[DEBUG] Tentando login com:", email)  # DEBUG
+        if not email or not senha:
+            messagebox.showwarning("Campos obrigatórios", "Preencha email e senha.")
+            return
+
+        print("[DEBUG] Tentando login com:", email)
 
         try:
-            response = httpx.post(
-                f"{API_URL}/auth/login", json={"email": email, "senha": senha}
-            )
-            response.raise_for_status()
-            token = response.json()["access_token"]
+            token = self.autenticar(email, senha)
+            if token:
+                self.salvar_token(token)
+                messagebox.showinfo("Sucesso", "Login realizado com sucesso!")
 
-            print("[DEBUG] Login bem-sucedido, token recebido")
-
-            with open(TOKEN_PATH, "w") as f:
-                f.write(token)
-
-            messagebox.showinfo("Sucesso", "Login realizado com sucesso!")
-
-            self.withdraw()  # Oculta a janela de login sem destruí-la
-            print("[DEBUG] Chamando dashboard...")
-            self.after(200, run)
+                self.withdraw()  # Oculta a janela principal
+                print("[DEBUG] Chamando dashboard...")
+                self.after(200, run)
 
         except httpx.HTTPStatusError as err:
-            print("[DEBUG] Erro HTTP no login:", err.response.text)
-            messagebox.showerror("Erro", f"Falha no login: {err.response.text}")
+            detalhe = err.response.json().get("detail", "Erro desconhecido")
+            print("[DEBUG] Erro HTTP no login:", detalhe)
+            messagebox.showerror("Erro no login", f"Detalhe: {detalhe}")
         except Exception as e:
-            print("[DEBUG] Erro inesperado no login:", str(e))
-            messagebox.showerror("Erro", str(e))
+            print("[DEBUG] Erro inesperado:", str(e))
+            messagebox.showerror("Erro", f"Erro inesperado: {e}")
+
+    def autenticar(self, email: str, senha: str) -> Optional[str]:
+        response = httpx.post(f"{API_URL}/auth/login", json={"email": email, "senha": senha})
+        response.raise_for_status()
+        return response.json().get("access_token")
+
+    def salvar_token(self, token: str):
+        with open(TOKEN_PATH, "w") as f:
+            f.write(token)
+        print("[DEBUG] Token salvo com sucesso.")
 
 
 if __name__ == "__main__":
