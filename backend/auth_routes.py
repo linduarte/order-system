@@ -8,6 +8,8 @@ from jose import  jwt ,JWTError
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
+# Importe a função do seu novo arquivo utils.py
+from backend.utils import save_token_to_file
 import logging
 
 # Criação do contexto bcrypt para hashing e verificação de senhas
@@ -123,6 +125,11 @@ async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sess
 
         access_token = criar_token(usuario.id)
         refresh_token = criar_token(usuario.id, duracao_token=timedelta(days=7))
+
+        # --- AQUI ESTÁ A MUDANÇA ---
+        # Chame a função para salvar o access_token no arquivo.
+        save_token_to_file(access_token)
+        # --- FIM DA MUDANÇA ---
 
         return {
             "access_token": access_token,

@@ -40,7 +40,7 @@ class ItemPedidoSchema(BaseModel):
 
 class ResponsePedidoSchema(BaseModel):
     id: int
-    status: int
+    status: str
     preco: float
     itens: List[ItemPedidoSchema]
 
