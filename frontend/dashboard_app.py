@@ -33,8 +33,8 @@ def api_request(method, endpoint, json_data=None):
         st.error(f"Erro ao realizar a requisição: {e}")
         return None
 
-# Caminho para salvar o token
-TOKEN_PATH = os.path.join(os.path.dirname(__file__), "token.txt")
+# Shared path for the token file
+TOKEN_PATH = os.path.join(os.path.dirname(__file__), "..", "access_token.txt")
 API_URL = "http://localhost:8000"
 
 
@@ -91,7 +91,7 @@ def criar_pedido():
 
 def listar_pedidos():
     try:
-        result = api_request("GET", "/pedidos/listar")
+        result = api_request("GET", "/pedidos/listar/pedidos-usuario")
         if result:
             for pedido in result:
                 st.write(f"ID: {pedido['id']} | Status: {pedido['status']}")
@@ -102,10 +102,19 @@ def listar_pedidos():
 
 def modificar_item_pedido(endpoint):
     id_pedido = st.text_input("ID do Pedido:", key=endpoint + "_id")
-    item = st.text_input("Nome do Item:", key=endpoint + "_item")
+    quantidade = st.number_input("Quantidade:", min_value=1, key=endpoint + "_quantidade")
+    sabor = st.text_input("Sabor:", key=endpoint + "_sabor")
+    tamanho = st.selectbox("Tamanho:", ["Pequeno", "Médio", "Grande"], key=endpoint + "_tamanho")
+    preco_unitario = st.number_input("Preço Unitário:", min_value=0.0, format="%.2f", key=endpoint + "_preco_unitario")
+
     if st.button("Confirmar", key=endpoint + "_btn"):
-        if id_pedido and item:
-            data = {"item": item}
+        if id_pedido and quantidade and sabor and tamanho and preco_unitario:
+            data = {
+                "quantidade": quantidade,
+                "sabor": sabor,
+                "tamanho": tamanho,
+                "preco_unitario": preco_unitario,
+            }
             try:
                 result = api_request(
                     "POST", f"/pedidos/pedido/{endpoint}/{id_pedido}", json_data=data

@@ -10,7 +10,8 @@ import signal
 API_URL = "http://localhost:8000"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TOKEN_PATH = os.path.join(BASE_DIR, "token.txt")
+# Shared path for the token file
+TOKEN_PATH = os.path.join(os.path.dirname(__file__), "..", "access_token.txt")
 
 
 signal.signal(signal.SIGINT, signal.SIG_IGN)  # Ignore Ctrl+C
@@ -119,7 +120,8 @@ def run():
             messagebox.showerror("Erro", "Usuário não encontrado.")
             return
 
-        resultado = api_get(f"/pedidos/listar?usuario_id={id_usuario}")  # Pass usuario_id
+        # resultado = api_get(f"/pedidos/usuario_id={id_usuario}")  # Pass 
+        resultado = api_get("/pedidos/listar/pedidos-usuario")
         if resultado:
             pedidos = "\n".join(
                 [f"ID {p['id']} - Status: {p['status']}" for p in resultado]
@@ -131,11 +133,25 @@ def run():
 
     def adicionar_item():
         id_pedido = simpledialog.askstring("Adicionar Item", "ID do Pedido:")
-        item = simpledialog.askstring("Adicionar Item", "Nome do Item:")
-        if id_pedido and item:
-            api_post(
-                f"/pedidos/pedido/adicionar-item/{id_pedido}", json_data={"item": item}
-            )
+        quantidade = simpledialog.askinteger("Adicionar Item", "Quantidade:")
+        sabor = simpledialog.askstring("Adicionar Item", "Sabor:")
+        tamanho = simpledialog.askstring("Adicionar Item", "Tamanho (Pequeno, Médio, Grande):")
+        preco_unitario = simpledialog.askfloat("Adicionar Item", "Preço Unitário:")
+
+        if id_pedido and quantidade and sabor and tamanho and preco_unitario:
+            data = {
+            "quantidade": quantidade,
+            "sabor": sabor,
+            "tamanho": tamanho,
+            "preco_unitario": preco_unitario,
+        }
+        try:
+            result = api_post(f"/pedidos/pedido/adicionar-item/{id_pedido}", json=data)
+            if result:
+                messagebox.showinfo("Sucesso", "Item adicionado com sucesso ao pedido.")
+        except Exception as e:
+            print(f"[ERRO] Erro ao adicionar item: {e}")
+            messagebox.showerror("Erro", "Erro ao adicionar item.")
 
     def remover_item():
         id_pedido = simpledialog.askstring("Remover Item", "ID do Pedido:")

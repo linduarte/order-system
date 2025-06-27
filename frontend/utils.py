@@ -11,7 +11,7 @@ def read_token():
     :return: O token JWT ou None em caso de erro.
     """
     try:
-        token_path = os.path.join(os.path.dirname(__file__), "token.txt")
+        token_path = os.path.join(os.path.dirname(__file__), "access_token.txt")
         with open(token_path, "r") as file:
             return file.read().strip()
     except Exception as e:
