@@ -99,26 +99,40 @@ async def adicionar_item_pedido(
         "item_id": item_pedido.id,
         "preco_pedido": pedido.preco,
     }
-
-@order_router.post("/pedido/remover-item/{id_item_pedido}")
+@order_router.delete("/pedido/remover-item/{id_item_pedido}")
 async def remover_item_pedido(
     id_item_pedido: int,
     session: Session = Depends(pegar_sessao),
     usuario: Usuario = Depends(verificar_token),
 ):
-    item_pedido = (
-        session.query(ItemPedido).filter(ItemPedido.id == id_item_pedido).first()
-    )
-    pedido = session.query(Pedido).filter(Pedido.id == item_pedido.pedido).first()
+    # Fetch the item from the database
+    item_pedido = session.query(ItemPedido).filter(ItemPedido.id == id_item_pedido).first()
     if not item_pedido:
-        raise HTTPException(status_code=400, detail="Item no pedido não existente")
+        raise HTTPException(status_code=404, detail="Item do pedido não encontrado")
+
+    # Fetch the associated order
+    pedido = session.query(Pedido).filter(Pedido.id == item_pedido.pedido).first()
+    if not pedido:
+        raise HTTPException(status_code=404, detail="Pedido não encontrado")
+
+    # Validate the order status
+    if pedido.status in ["FINALIZADO", "CANCELADO"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Não é possível remover itens de pedidos FINALIZADO ou CANCELADO",
+        )
+
+    # Validate user authorization
     if not usuario.admin and usuario.id != pedido.usuario:
         raise HTTPException(
-            status_code=401, detail="Você não tem autorização para fazer essa operação"
+            status_code=401, detail="Você não tem autorização para realizar esta operação"
         )
+
+    # Remove the item and update the order price
     session.delete(item_pedido)
     pedido.calcular_preco()
     session.commit()
+
     return {
         "mensagem": "Item removido com sucesso",
         "quantidade_itens_pedido": len(pedido.itens),

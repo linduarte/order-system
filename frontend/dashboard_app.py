@@ -100,31 +100,55 @@ def listar_pedidos():
         st.error("Erro ao listar pedidos.")
 
 
-def modificar_item_pedido(endpoint):
-    id_pedido = st.text_input("ID do Pedido:", key=endpoint + "_id")
-    quantidade = st.number_input("Quantidade:", min_value=1, key=endpoint + "_quantidade")
-    sabor = st.text_input("Sabor:", key=endpoint + "_sabor")
-    tamanho = st.selectbox("Tamanho:", ["Pequeno", "Médio", "Grande"], key=endpoint + "_tamanho")
-    preco_unitario = st.number_input("Preço Unitário:", min_value=0.0, format="%.2f", key=endpoint + "_preco_unitario")
+def adicionar_item_pedido():
+    id_pedido = st.text_input("ID do Pedido:", key="adicionar_item_id_pedido")
+    quantidade = st.number_input("Quantidade:", min_value=1, key="adicionar_item_quantidade")
+    sabor = st.text_input("Sabor:", key="adicionar_item_sabor")
+    tamanho = st.selectbox("Tamanho:", ["Pequeno", "Médio", "Grande"], key="adicionar_item_tamanho")
+    preco_unitario = st.number_input("Preço Unitário:", min_value=0.0, format="%.2f", key="adicionar_item_preco_unitario")
 
-    if st.button("Confirmar", key=endpoint + "_btn"):
+    if st.button("Adicionar Item", key="adicionar_item_btn"):
         if id_pedido and quantidade and sabor and tamanho and preco_unitario:
-            data = {
-                "quantidade": quantidade,
-                "sabor": sabor,
-                "tamanho": tamanho,
-                "preco_unitario": preco_unitario,
-            }
             try:
+                # Fetch the order status
+                order = api_request("GET", f"/pedidos/pedido/{id_pedido}")
+                if order and order.get("status") in ["FINALIZADO", "CANCELADO"]:
+                    st.error("Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO.")
+                    return
+
+                # Proceed with adding the item
+                data = {
+                    "quantidade": quantidade,
+                    "sabor": sabor,
+                    "tamanho": tamanho,
+                    "preco_unitario": preco_unitario,
+                }
                 result = api_request(
-                    "POST", f"/pedidos/pedido/{endpoint}/{id_pedido}", json_data=data
+                    "POST", f"/pedidos/pedido/adicionar-item/{id_pedido}", json_data=data
                 )
                 if result:
-                    st.success("Item atualizado com sucesso.")
+                    st.success("Item adicionado com sucesso ao pedido.")
             except Exception as e:
-                logging.error(f"Erro ao modificar item: {e}")
-                st.error("Erro ao modificar item.")
+                logging.error(f"Erro ao adicionar item: {e}")
+                st.error("Erro ao adicionar item.")
 
+def remover_item_pedido():
+    id_item_pedido = st.text_input("ID do Item do Pedido:", key="remover_item_id_item_pedido")
+
+    if st.button("Remover Item", key="remover_item_btn"):
+        if id_item_pedido:
+            try:
+                # Proceed with removing the item
+                result = api_request(
+                    "DELETE", f"/pedidos/pedido/remover-item/{id_item_pedido}"
+                )
+                if result:
+                    st.success("Item removido com sucesso do pedido.")
+                else:
+                    st.error("Erro ao remover item. Verifique se o ID do item está correto.")
+            except Exception as e:
+                logging.error(f"Erro ao remover item: {e}")
+                st.error("Erro ao remover item.")
 
 def mudar_status_pedido(acao):
     id_pedido = st.text_input(
@@ -158,9 +182,9 @@ def menu_dashboard():
     elif escolha == "Listar Pedidos":
         listar_pedidos()
     elif escolha == "Adicionar Item":
-        modificar_item_pedido("adicionar-item")
+        adicionar_item_pedido()
     elif escolha == "Remover Item":
-        modificar_item_pedido("remover-item")
+        remover_item_pedido()
     elif escolha == "Finalizar Pedido":
         mudar_status_pedido("finalizar")
     elif escolha == "Cancelar Pedido":
