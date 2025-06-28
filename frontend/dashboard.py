@@ -87,6 +87,24 @@ def api_get(endpoint):
         print("[ERRO EXCEÇÃO]", str(e))
         messagebox.showerror("Erro", str(e))
 
+def api_delete(endpoint):
+    token = get_token()
+    if not token:
+        return None
+    headers = {"Authorization": f"Bearer {token}"}
+    print(f"[DEBUG] DELETE para {API_URL}{endpoint} com headers={headers}")
+    try:
+        response = httpx.delete(f"{API_URL}{endpoint}", headers=headers)
+        print(f"[DEBUG] Status: {response.status_code}, Resposta: {response.text}")
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as err:
+        print(f"[ERRO HTTP] {err.response.status_code}: {err.response.text}")
+        messagebox.showerror("Erro API", err.response.text)
+    except Exception as e:
+        print("[ERRO EXCEÇÃO]", str(e))
+        messagebox.showerror("Erro", str(e))
+
 
 def run():
     print("[DEBUG] Dashboard iniciado.")
@@ -154,12 +172,18 @@ def run():
             messagebox.showerror("Erro", "Erro ao adicionar item.")
 
     def remover_item():
-        id_pedido = simpledialog.askstring("Remover Item", "ID do Pedido:")
-        item = simpledialog.askstring("Remover Item", "Nome do Item:")
-        if id_pedido and item:
-            api_post(
-                f"/pedidos/pedido/remover-item/{id_pedido}", json_data={"item": item}
-            )
+        id_item_pedido = simpledialog.askstring("Remover Item", "ID do Item do Pedido:")
+        if id_item_pedido:
+            try:
+                # Proceed with removing the item
+                result = api_delete(f"/pedidos/pedido/remover-item/{id_item_pedido}")
+                if result:
+                    messagebox.showinfo("Sucesso", "Item removido com sucesso do pedido.")
+                else:
+                    messagebox.showerror("Erro", "Erro ao remover item. Verifique se o ID do item está correto.")
+            except Exception as e:
+                print(f"[ERRO] Erro ao remover item: {e}")
+                messagebox.showerror("Erro", "Erro ao remover item.")
 
     def finalizar_pedido():
         id_pedido = simpledialog.askstring("Finalizar Pedido", "ID do Pedido:")
