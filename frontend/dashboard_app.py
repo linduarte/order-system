@@ -14,7 +14,26 @@ TOKEN_PATH = os.path.join(os.path.dirname(__file__), "access_token.txt")
 REFRESH_TOKEN_PATH = os.path.join(os.path.dirname(__file__), "refresh_token.txt")
 API_URL = "http://localhost:8000"  # URL base do backend FastAPI
 
+
+# Função para aplicar a fonte Victor Mono Nerd Font
+def inject_custom_font():
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Victor+Mono&display=swap');
+
+        html, body, [class*="css"]  {
+            font-family: 'Victor Mono', monospace;
+            font-size: 16px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 # --- Funções para leitura e salvamento de tokens ---
+
 
 @st.cache_data
 def cached_token():
@@ -32,6 +51,7 @@ def cached_token():
         logging.error(f"Erro ao ler access token: {e}")
         return None
 
+
 @st.cache_data
 def cached_refresh_token():
     """
@@ -48,6 +68,7 @@ def cached_refresh_token():
         logging.error(f"Erro ao ler refresh token: {e}")
         return None
 
+
 def save_tokens(access_token: str, refresh_token: str):
     """
     Salva os tokens de acesso e de atualização em arquivos locais.
@@ -62,6 +83,7 @@ def save_tokens(access_token: str, refresh_token: str):
         logging.error(f"Erro ao salvar tokens: {e}")
         st.error("Erro ao salvar os tokens. Tente novamente.")
 
+
 def clear_tokens():
     """
     Remove os arquivos de tokens, efetivamente desconectando o usuário.
@@ -75,10 +97,11 @@ def clear_tokens():
     except Exception as e:
         logging.error(f"Erro ao limpar tokens: {e}")
 
+
 def refresh_access_token_and_retry():
     """
     Realiza uma solicitação para atualizar o access token usando o refresh token.
-    
+
     Returns:
         bool: True se o token foi renovado com sucesso, False caso contrário.
     """
@@ -91,7 +114,7 @@ def refresh_access_token_and_retry():
     try:
         response = httpx.post(
             f"{API_URL}/auth/refresh-token",
-            headers={"Authorization": f"Bearer {refresh_t}"}
+            headers={"Authorization": f"Bearer {refresh_t}"},
         )
         response.raise_for_status()
 
@@ -115,6 +138,7 @@ def refresh_access_token_and_retry():
         logging.error(f"Erro ao renovar token: {e}")
         clear_tokens()
         return False
+
 
 def api_request(method: str, endpoint: str, json_data: dict = None):
     """
@@ -165,7 +189,9 @@ def api_request(method: str, endpoint: str, json_data: dict = None):
             return None
     return None
 
+
 # --- UI de Login ---
+
 
 def login_form():
     """
@@ -179,6 +205,7 @@ def login_form():
             st.session_state["logado"] = True
             st.rerun()
 
+
 def login_backend(email, senha):
     """
     Realiza o login no backend e armazena os tokens recebidos.
@@ -191,7 +218,9 @@ def login_backend(email, senha):
         bool: True se login for bem-sucedido, False caso contrário.
     """
     try:
-        response = httpx.post(f"{API_URL}/auth/login", json={"email": email, "senha": senha})
+        response = httpx.post(
+            f"{API_URL}/auth/login", json={"email": email, "senha": senha}
+        )
         response.raise_for_status()
         tokens = response.json()
         access_token = tokens.get("access_token")
@@ -212,8 +241,10 @@ def login_backend(email, senha):
         logging.error(f"Erro no login: {e}")
         st.error("Erro inesperado ao fazer login.")
         return False
-        
+
+
 # --- Funções do Dashboard ---
+
 
 def criar_pedido():
     """
@@ -238,6 +269,7 @@ def criar_pedido():
     else:
         st.warning("Faça login para criar um pedido.")
 
+
 def listar_pedidos():
     """
     Lista os pedidos do usuário autenticado na interface.
@@ -258,6 +290,7 @@ def listar_pedidos():
         logging.error(f"Erro ao listar pedidos: {e}")
         st.error("Erro ao listar pedidos.")
 
+
 def adicionar_item_pedido():
     """
     Interface para adicionar um item a um pedido existente.
@@ -265,17 +298,28 @@ def adicionar_item_pedido():
     """
     st.subheader("Adicionar Item ao Pedido")
     id_pedido = st.text_input("ID do Pedido:", key="adicionar_item_id_pedido")
-    quantidade = st.number_input("Quantidade:", min_value=1, key="adicionar_item_quantidade")
+    quantidade = st.number_input(
+        "Quantidade:", min_value=1, key="adicionar_item_quantidade"
+    )
     sabor = st.text_input("Sabor:", key="adicionar_item_sabor")
-    tamanho = st.selectbox("Tamanho:", ["Pequeno", "Médio", "Grande"], key="adicionar_item_tamanho")
-    preco_unitario = st.number_input("Preço Unitário:", min_value=0.0, format="%.2f", key="adicionar_item_preco_unitario")
+    tamanho = st.selectbox(
+        "Tamanho:", ["Pequeno", "Médio", "Grande"], key="adicionar_item_tamanho"
+    )
+    preco_unitario = st.number_input(
+        "Preço Unitário:",
+        min_value=0.0,
+        format="%.2f",
+        key="adicionar_item_preco_unitario",
+    )
 
     if st.button("Adicionar Item", key="adicionar_item_btn"):
         if id_pedido and quantidade and sabor and tamanho and preco_unitario:
             try:
                 order = api_request("GET", f"/pedidos/pedido/{id_pedido}")
                 if order and order.get("status") in ["FINALIZADO", "CANCELADO"]:
-                    st.error("Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO.")
+                    st.error(
+                        "Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO."
+                    )
                     return
 
                 data = {
@@ -284,7 +328,11 @@ def adicionar_item_pedido():
                     "tamanho": tamanho,
                     "preco_unitario": preco_unitario,
                 }
-                result = api_request("POST", f"/pedidos/pedido/adicionar-item/{id_pedido}", json_data=data)
+                result = api_request(
+                    "POST",
+                    f"/pedidos/pedido/adicionar-item/{id_pedido}",
+                    json_data=data,
+                )
                 if result:
                     st.success("Item adicionado com sucesso ao pedido.")
             except Exception as e:
@@ -292,6 +340,7 @@ def adicionar_item_pedido():
                 st.error("Erro ao adicionar item.")
         else:
             st.warning("Por favor, preencha todos os campos do item.")
+
 
 def modificar_item_pedido(endpoint_acao: str):
     """
@@ -309,11 +358,17 @@ def modificar_item_pedido(endpoint_acao: str):
             try:
                 order = api_request("GET", f"/pedidos/pedido/{id_pedido}")
                 if order and order.get("status") in ["FINALIZADO", "CANCELADO"]:
-                    st.error("Não é possível modificar itens de pedidos FINALIZADO ou CANCELADO.")
+                    st.error(
+                        "Não é possível modificar itens de pedidos FINALIZADO ou CANCELADO."
+                    )
                     return
 
                 data = {"item": item}
-                result = api_request("POST", f"/pedidos/pedido/{endpoint_acao}/{id_pedido}", json_data=data)
+                result = api_request(
+                    "POST",
+                    f"/pedidos/pedido/{endpoint_acao}/{id_pedido}",
+                    json_data=data,
+                )
                 if result:
                     st.success("Item atualizado com sucesso.")
             except Exception as e:
@@ -321,6 +376,7 @@ def modificar_item_pedido(endpoint_acao: str):
                 st.error("Erro ao modificar item.")
         else:
             st.warning("Preencha o ID do Pedido e o nome do Item.")
+
 
 def mudar_status_pedido(acao: str):
     """
@@ -330,7 +386,9 @@ def mudar_status_pedido(acao: str):
         acao (str): Ação desejada - 'finalizar' ou 'cancelar'.
     """
     st.subheader(f"{acao.capitalize()} Pedido")
-    id_pedido = st.text_input(f"ID do Pedido para {acao.capitalize()}:", key=f"{acao}_id")
+    id_pedido = st.text_input(
+        f"ID do Pedido para {acao.capitalize()}:", key=f"{acao}_id"
+    )
     if st.button(f"{acao.capitalize()} Pedido", key=f"{acao}_btn"):
         if id_pedido:
             try:
@@ -342,6 +400,7 @@ def mudar_status_pedido(acao: str):
                 st.error(f"Erro ao {acao} pedido.")
         else:
             st.warning("Preencha o ID do Pedido.")
+
 
 def menu_dashboard():
     """
@@ -378,6 +437,7 @@ def menu_dashboard():
     elif escolha == "Cancelar Pedido":
         mudar_status_pedido("cancelar")
 
+
 def main():
     """
     Função principal do app. Controla o estado de login e navegação
@@ -395,5 +455,6 @@ def main():
     else:
         menu_dashboard()
 
+
 if __name__ == "__main__":
-    main()        
+    main()
