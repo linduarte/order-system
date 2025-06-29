@@ -1,13 +1,20 @@
+"""Authentication routes for the FastAPI application.
+
+This module defines API endpoints related to user authentication, including account creation, login, and token refreshing.
+It uses JWT for token management and bcrypt for password hashing.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from backend.models import Usuario
 from backend.dependencies import pegar_sessao, verificar_token
 from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.schemas import UsuarioSchema, LoginSchema
 from sqlalchemy.orm import Session
-from jose import  jwt ,JWTError
+from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
+
 # Importe a função do seu novo arquivo utils.py
 from backend.utils import save_token_to_file
 import logging
@@ -19,7 +26,9 @@ bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def criar_token(id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)):
+def criar_token(
+    id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+):
     """
     Gera um token JWT com informações do usuário e tempo de expiração.
 
@@ -30,10 +39,12 @@ def criar_token(id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_
     try:
         data_expiracao = datetime.now(timezone.utc) + duracao_token
         dic_info = {
-            "sub": str(id_usuario),  # O 'sub' é usado para identificar o usuário
+            "sub": str(id_usuario),  # O \'sub\' é usado para identificar o usuário
             "exp": data_expiracao,  # Definir a data de expiração do token
         }
-        jwt_codificado = jwt.encode(dic_info, SECRET_KEY, algorithm=ALGORITHM)  # Codifica o token com a chave secreta
+        jwt_codificado = jwt.encode(
+            dic_info, SECRET_KEY, algorithm=ALGORITHM
+        )  # Codifica o token com a chave secreta
         return jwt_codificado
     except JWTError as e:
         logging.error(f"Erro ao criar o token JWT: {e}")
@@ -43,13 +54,10 @@ def criar_token(id_usuario, duracao_token=timedelta(minutes=ACCESS_TOKEN_EXPIRE_
         raise HTTPException(status_code=500, detail="Erro interno inesperado")
 
 
-
-
-
 def autenticar_usuario(email, senha, session):
     """
     Autentica o usuário verificando o email e a senha.
-    
+
     :param email: O email do usuário.
     :param senha: A senha do usuário.
     :param session: A sessão do banco de dados para consulta.
@@ -58,24 +66,31 @@ def autenticar_usuario(email, senha, session):
     try:
         # Busca o usuário no banco de dados
         usuario = session.query(Usuario).filter(Usuario.email == email).first()
-        
+
         # Se o usuário não for encontrado, retorna erro
         if not usuario:
             logging.warning(f"Tentativa de login com email não encontrado: {email}")
-            raise HTTPException(status_code=400, detail="Usuário não encontrado ou credenciais inválidas")
-        
+            raise HTTPException(
+                status_code=400,
+                detail="Usuário não encontrado ou credenciais inválidas",
+            )
+
         # Verifica a senha
         if not bcrypt_context.verify(senha, usuario.senha):
-            logging.warning(f"Tentativa de login falhada com senha incorreta para o email: {email}")
-            raise HTTPException(status_code=400, detail="Usuário não encontrado ou credenciais inválidas")
-        
+            logging.warning(
+                f"Tentativa de login falhada com senha incorreta para o email: {email}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail="Usuário não encontrado ou credenciais inválidas",
+            )
+
         # Se tudo der certo, retorna o usuário
         return usuario
-    
+
     except Exception as e:
         logging.error(f"Erro ao tentar autenticar usuário {email}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao realizar a autenticação")
-
 
 
 @auth_router.get("/")
@@ -93,6 +108,18 @@ async def home():
 async def criar_conta(
     usuario_schema: UsuarioSchema, session: Session = Depends(pegar_sessao)
 ):
+    """Cria uma nova conta de usuário.
+
+    Args:
+        usuario_schema (UsuarioSchema): Os dados do novo usuário a ser criado.
+        session (Session, optional): A sessão do banco de dados. Injetada por dependência.
+
+    Raises:
+        HTTPException: Se o e-mail do usuário já estiver cadastrado.
+
+    Returns:
+        dict: Uma mensagem de sucesso após o cadastro do usuário.
+    """
     usuario = (
         session.query(Usuario).filter(Usuario.email == usuario_schema.email).first()
     )
@@ -116,20 +143,32 @@ async def criar_conta(
 # login -> email e senha -> token JWT (Json Web Token) ahuyba786dabd86a5vdba865dvad786and
 @auth_router.post("/login")
 async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sessao)):
+    """Realiza o login do usuário e retorna tokens de acesso e refresh.
+
+    Args:
+        login_schema (LoginSchema): Os dados de login do usuário (email e senha).
+        session (Session, optional): A sessão do banco de dados. Injetada por dependência.
+
+    Raises:
+        HTTPException: Se o usuário não for encontrado ou as credenciais forem inválidas.
+        HTTPException: Em caso de erro interno ao realizar o login.
+
+    Returns:
+        dict: Um dicionário contendo o access_token, refresh_token e o tipo de token.
+    """
     try:
         usuario = autenticar_usuario(login_schema.email, login_schema.senha, session)
         if not usuario:
             raise HTTPException(
-                status_code=400, detail="Usuário não encontrado ou credenciais inválidas"
+                status_code=400,
+                detail="Usuário não encontrado ou credenciais inválidas",
             )
 
         access_token = criar_token(usuario.id)
         refresh_token = criar_token(usuario.id, duracao_token=timedelta(days=7))
 
-        
         # Chame a função para salvar o access_token no arquivo.
         save_token_to_file(access_token)
-        
 
         return {
             "access_token": access_token,
@@ -141,12 +180,23 @@ async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sess
         raise HTTPException(status_code=500, detail="Erro interno ao realizar login")
 
 
-
 @auth_router.post("/login-form")
 async def login_form(
     dados_formulario: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(pegar_sessao),
 ):
+    """Realiza o login do usuário através de um formulário OAuth2.
+
+    Args:
+        dados_formulario (OAuth2PasswordRequestForm, optional): Dados do formulário de login.
+        session (Session, optional): A sessão do banco de dados. Injetada por dependência.
+
+    Raises:
+        HTTPException: Se o usuário não for encontrado ou as credenciais forem inválidas.
+
+    Returns:
+        dict: Um dicionário contendo o access_token e o tipo de token.
+    """
     usuario = autenticar_usuario(
         dados_formulario.username, dados_formulario.password, session
     )
@@ -161,5 +211,13 @@ async def login_form(
 
 @auth_router.get("/refresh")
 async def use_refresh_token(usuario: Usuario = Depends(verificar_token)):
+    """Atualiza o token de acesso usando um token de refresh válido.
+
+    Args:
+        usuario (Usuario, optional): O objeto de usuário autenticado, obtido via dependência de verificação de token.
+
+    Returns:
+        dict: Um dicionário contendo o novo access_token e o tipo de token.
+    """
     access_token = criar_token(usuario.id)
     return {"access_token": access_token, "token_type": "Bearer"}

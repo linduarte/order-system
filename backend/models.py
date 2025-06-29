@@ -1,3 +1,9 @@
+"""SQLAlchemy models for the FastAPI application.
+
+This module defines the database schema using SQLAlchemy ORM, including tables for users, orders, and order items.
+It also includes methods for interacting with these models, such as calculating order prices.
+"""
+
 from sqlalchemy import (
     create_engine,
     Column,
@@ -8,17 +14,28 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.orm import declarative_base, relationship
-# from sqlalchemy_utils.types import ChoiceType
 
-# cria a conexão do seu banco
+# Database connection engine
 db = create_engine("sqlite:///d:/reposground/work/order-system/backend/banco.db")
+"""SQLAlchemy engine for connecting to the SQLite database."""
 
-# cria a base do banco de dados
+# Base class for declarative models
 Base = declarative_base()
+"""Declarative base class for SQLAlchemy models."""
 
 
-# criar as classes/tabelas do banco
 class Usuario(Base):
+    """Represents a user in the system.
+
+    Attributes:
+        id (int): Primary key, auto-incrementing user ID.
+        nome (str): Name of the user.
+        email (str): Email of the user, must be unique.
+        senha (str): Hashed password of the user.
+        ativo (bool): Indicates if the user account is active.
+        admin (bool): Indicates if the user has administrative privileges.
+    """
+
     __tablename__ = "usuarios"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -29,6 +46,15 @@ class Usuario(Base):
     admin = Column("admin", Boolean, default=False)
 
     def __init__(self, nome, email, senha, ativo=True, admin=False):
+        """Initializes a new Usuario instance.
+
+        Args:
+            nome (str): The name of the user.
+            email (str): The email of the user.
+            senha (str): The hashed password of the user.
+            ativo (bool, optional): Whether the user is active. Defaults to True.
+            admin (bool, optional): Whether the user has admin privileges. Defaults to False.
+        """
         self.nome = nome
         self.email = email
         self.senha = senha
@@ -36,15 +62,18 @@ class Usuario(Base):
         self.admin = admin
 
 
-# Pedido
 class Pedido(Base):
-    __tablename__ = "pedidos"
+    """Represents an order in the system.
 
-    # STATUS_PEDIDOS = (
-    #     ("PENDENTE", "PENDENTE"),
-    #     ("CANCELADO", "CANCELADO"),
-    #     ("FINALIZADO", "FINALIZADO")
-    # )
+    Attributes:
+        id (int): Primary key, auto-incrementing order ID.
+        status (str): Current status of the order (e.g., "PENDENTE", "CANCELADO", "FINALIZADO").
+        usuario (int): Foreign key referencing the ID of the user who placed the order.
+        preco (float): Total price of the order.
+        itens (relationship): Relationship to the ItemPedido model, representing items in this order.
+    """
+
+    __tablename__ = "pedidos"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     status = Column("status", String)
@@ -53,19 +82,37 @@ class Pedido(Base):
     itens = relationship("ItemPedido", cascade="all, delete")
 
     def __init__(self, usuario, status="PENDENTE", preco=0):
+        """Initializes a new Pedido instance.
+
+        Args:
+            usuario (int): The ID of the user placing the order.
+            status (str, optional): The initial status of the order. Defaults to "PENDENTE".
+            preco (float, optional): The initial price of the order. Defaults to 0.
+        """
         self.usuario = usuario
         self.preco = preco
         self.status = status
 
     def calcular_preco(self):
-        # percorrer todos os itens do pedido
-        # somar todos os preços de todos os itens dos pedidos
-        # editar no campo 'preco' o valor final do preço do pedido
+        """Calculates and updates the total price of the order based on its items.
+
+        The `preco` attribute is updated by summing the quantities multiplied by the unit prices of all associated `ItemPedido` instances.
+        """
         self.preco = sum(item.quantidade * item.preco_unitario for item in self.itens)
 
 
-# ItensPedido
 class ItemPedido(Base):
+    """Represents an item within an order.
+
+    Attributes:
+        id (int): Primary key, auto-incrementing item ID.
+        quantidade (int): Quantity of the item.
+        sabor (str): Flavor of the item.
+        tamanho (str): Size of the item.
+        preco_unitario (float): Unit price of the item.
+        pedido (int): Foreign key referencing the ID of the order this item belongs to.
+    """
+
     __tablename__ = "itens_pedido"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
@@ -76,17 +123,17 @@ class ItemPedido(Base):
     pedido = Column("pedido", ForeignKey("pedidos.id"))
 
     def __init__(self, quantidade, sabor, tamanho, preco_unitario, pedido):
+        """Initializes a new ItemPedido instance.
+
+        Args:
+            quantidade (int): The quantity of the item.
+            sabor (str): The flavor of the item.
+            tamanho (str): The size of the item.
+            preco_unitario (float): The unit price of the item.
+            pedido (int): The ID of the order this item belongs to.
+        """
         self.quantidade = quantidade
         self.sabor = sabor
         self.tamanho = tamanho
         self.preco_unitario = preco_unitario
         self.pedido = pedido
-
-
-# executa a criação dos metadados do seu banco (cria efetivamente o banco de dados)
-
-# Migrar o banco de dados
-
-# Fazer a migração: alembic revision --autogenerate -m "nome da migração"
-
-# Executar a migração: alembic upgrade head

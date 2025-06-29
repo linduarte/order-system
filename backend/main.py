@@ -9,7 +9,6 @@ from backend.auth_routes import auth_router
 from backend.order_routes import order_router
 
 
-
 app = FastAPI(
     title="My FastAPI Application",
     description="This is a sample FastAPI application with authentication and order management.",
@@ -34,4 +33,3 @@ app.include_router(order_router)
 # Post -> enviar/criar
 # Put/Patch -> edição
 # Delete -> deletar
-

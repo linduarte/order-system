@@ -1,3 +1,9 @@
+"""Module for common dependencies used in the FastAPI application.
+
+This module provides functions for managing database sessions and verifying JWT tokens,
+which are used as dependencies in various API routes.
+"""
+
 from fastapi import Depends, HTTPException
 from backend.config import SECRET_KEY, ALGORITHM, oauth2_schema
 from backend.models import db
@@ -7,6 +13,13 @@ from jose import jwt, JWTError
 
 
 def pegar_sessao():
+    """Dependency that provides a SQLAlchemy database session.
+
+    This function creates a new database session for each request and ensures it is closed after the request is completed.
+
+    Yields:
+        Session: A SQLAlchemy database session.
+    """
     try:
         Session = sessionmaker(bind=db)
         session = Session()
@@ -18,6 +31,20 @@ def pegar_sessao():
 def verificar_token(
     token: str = Depends(oauth2_schema), session: Session = Depends(pegar_sessao)
 ):
+    """Dependency that verifies the authenticity and validity of a JWT token.
+
+    This function decodes the provided JWT token, extracts the user ID, and retrieves the corresponding user from the database.
+
+    Args:
+        token (str): The JWT token provided in the request header (injected by OAuth2PasswordBearer).
+        session (Session): The database session (injected by pegar_sessao).
+
+    Raises:
+        HTTPException: If the token is invalid, expired, or the user associated with the token is not found.
+
+    Returns:
+        Usuario: The authenticated user object.
+    """
     try:
         dic_info = jwt.decode(token, SECRET_KEY, ALGORITHM)
         id_usuario = int(dic_info.get("sub"))
