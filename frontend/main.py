@@ -62,7 +62,9 @@ class LoginApp(tb.Window):
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
     def autenticar(self, email: str, senha: str) -> Optional[str]:
-        response = httpx.post(f"{API_URL}/auth/login", json={"email": email, "senha": senha})
+        response = httpx.post(
+            f"{API_URL}/auth/login", json={"email": email, "senha": senha}
+        )
         response.raise_for_status()
         return response.json().get("access_token")
 

@@ -4,7 +4,11 @@ import streamlit as st
 import httpx
 import os
 import logging
-from api_client import decode_jwt
+import json
+
+# from api_client import decode_jwt
+from datetime import datetime
+import base64
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
@@ -13,6 +17,22 @@ logging.basicConfig(level=logging.INFO)
 TOKEN_PATH = os.path.join(os.path.dirname(__file__), "access_token.txt")
 REFRESH_TOKEN_PATH = os.path.join(os.path.dirname(__file__), "refresh_token.txt")
 API_URL = "http://localhost:8000"  # URL base do backend FastAPI
+
+
+# Remove the import and add this function locally
+def decode_jwt(token):
+    """
+    Decodifica o token JWT e extrai o 'sub' (ID do usuário).
+    """
+    try:
+        payload = token.split(".")[1]
+        padding = "=" * (-len(payload) % 4)
+        decoded = base64.urlsafe_b64decode(payload + padding)
+        user_data = json.loads(decoded)
+        return user_data.get("sub")
+    except Exception as e:
+        logging.error(f"Erro ao decodificar o token JWT: {e}")
+        return None
 
 
 # Função para aplicar a fonte Victor Mono Nerd Font
@@ -43,12 +63,13 @@ def cached_token():
     """
     try:
         with open(TOKEN_PATH, "r") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        logging.info("Arquivo de access token não encontrado.")
+            data = json.load(f)
+            return data.get("token", "").strip()
+    except (FileNotFoundError, json.JSONDecodeError):
+        logging.info("Arquivo de token não encontrado ou inválido.")
         return None
     except Exception as e:
-        logging.error(f"Erro ao ler access token: {e}")
+        logging.error(f"Erro ao ler token: {e}")
         return None
 
 
@@ -60,9 +81,10 @@ def cached_refresh_token():
     """
     try:
         with open(REFRESH_TOKEN_PATH, "r") as f:
-            return f.read().strip()
-    except FileNotFoundError:
-        logging.info("Arquivo de refresh token não encontrado.")
+            data = json.load(f)
+            return data.get("token", "").strip()
+    except (FileNotFoundError, json.JSONDecodeError):
+        logging.info("Arquivo de refresh token não encontrado ou inválido.")
         return None
     except Exception as e:
         logging.error(f"Erro ao ler refresh token: {e}")
@@ -71,13 +93,33 @@ def cached_refresh_token():
 
 def save_tokens(access_token: str, refresh_token: str):
     """
-    Salva os tokens de acesso e de atualização em arquivos locais.
+    Salva os tokens de acesso e de atualização em arquivos locais com timestamp.
     """
     try:
+        timestamp = datetime.now().isoformat()
+
+        # Save access token with metadata
+        access_data = {
+            "token": access_token,
+            "created_at": timestamp,
+            "type": "access_token",
+        }
         with open(TOKEN_PATH, "w") as f:
-            f.write(access_token)
+            json.dump(
+                access_data, f, indent=2
+            )  # FIXED: Use json.dump instead of f.write(json.dumps())
+
+        # Save refresh token with metadata
+        refresh_data = {
+            "token": refresh_token,
+            "created_at": timestamp,
+            "type": "refresh_token",
+        }
         with open(REFRESH_TOKEN_PATH, "w") as f:
-            f.write(refresh_token)
+            json.dump(
+                refresh_data, f, indent=2
+            )  # FIXED: Use json.dump instead of f.write(json.dumps())
+
         logging.info("Tokens salvos com sucesso.")
     except IOError as e:
         logging.error(f"Erro ao salvar tokens: {e}")
@@ -93,6 +135,11 @@ def clear_tokens():
             os.remove(TOKEN_PATH)
         if os.path.exists(REFRESH_TOKEN_PATH):
             os.remove(REFRESH_TOKEN_PATH)
+
+        # Clear the caches when tokens are removed - ADD THESE LINES
+        cached_token.clear()
+        cached_refresh_token.clear()
+
         logging.info("Tokens removidos com sucesso.")
     except Exception as e:
         logging.error(f"Erro ao limpar tokens: {e}")
@@ -113,16 +160,23 @@ def refresh_access_token_and_retry():
 
     try:
         response = httpx.post(
-            f"{API_URL}/auth/refresh-token",
+            f"{API_URL}/auth/refresh",
             headers={"Authorization": f"Bearer {refresh_t}"},
         )
         response.raise_for_status()
 
         novo_access_token = response.json().get("access_token")
         if novo_access_token:
+            # Save in JSON format with timestamp - FIXED
+            access_data = {
+                "token": novo_access_token,
+                "created_at": datetime.now().isoformat(),
+                "type": "access_token",
+            }
             with open(TOKEN_PATH, "w") as f:
-                f.write(novo_access_token)
+                json.dump(access_data, f, indent=2)
             cached_token.clear()
+            cached_refresh_token.clear()  # ← Add this line
             logging.info("Access token renovado com sucesso.")
             return True
         else:
@@ -228,6 +282,11 @@ def login_backend(email, senha):
 
         if access_token and refresh_token:
             save_tokens(access_token, refresh_token)
+
+            # Clear the caches to force fresh token reading - ADD THESE LINES
+            cached_token.clear()
+            cached_refresh_token.clear()
+
             logging.info("Login bem-sucedido.")
             return True
         else:
@@ -249,7 +308,6 @@ def login_backend(email, senha):
 def criar_pedido():
     """
     Interface Streamlit para criar um novo pedido vinculado ao usuário autenticado.
-    Utiliza o access token para recuperar o ID do usuário via decode_jwt().
     """
     st.subheader("Criar Novo Pedido")
     token = cached_token()
@@ -257,15 +315,21 @@ def criar_pedido():
         try:
             usuario_id = decode_jwt(token)
             if usuario_id:
-                data = {"id_usuario": int(usuario_id)}
+                # Fix: Use "usuario" instead of "id_usuario" to match PedidoSchema
+                data = {
+                    "usuario": int(usuario_id)
+                }  # ← Changed from "id_usuario" to "usuario"
+
                 result = api_request("POST", "/pedidos/pedido", json_data=data)
                 if result:
                     st.success(result.get("mensagem", "Pedido criado com sucesso!"))
+                else:
+                    st.error("Erro ao criar pedido.")
             else:
                 st.warning("Não foi possível obter o ID do usuário do token.")
         except Exception as e:
             logging.error(f"Erro ao criar pedido: {e}")
-            st.error("Erro ao criar pedido.")
+            st.error(f"Erro ao criar pedido: {str(e)}")
     else:
         st.warning("Faça login para criar um pedido.")
 
@@ -402,12 +466,77 @@ def mudar_status_pedido(acao: str):
             st.warning("Preencha o ID do Pedido.")
 
 
+def remover_item_pedido():
+    """
+    Interface para remover um item de um pedido existente.
+    """
+    st.subheader("Remover Item do Pedido")
+    id_item_pedido = st.text_input(
+        "ID do Item do Pedido:", key="remover_item_id_item_pedido"
+    )
+
+    if st.button("Remover Item", key="remover_item_btn"):
+        if id_item_pedido:
+            try:
+                # Proceed with removing the item
+                result = api_request(
+                    "DELETE", f"/pedidos/pedido/remover-item/{id_item_pedido}"
+                )
+                if result:
+                    st.success("Item removido com sucesso do pedido.")
+                else:
+                    st.error(
+                        "Erro ao remover item. Verifique se o ID do item está correto."
+                    )
+            except Exception as e:
+                logging.error(f"Erro ao remover item: {e}")
+                st.error("Erro ao remover item.")
+        else:
+            st.warning("Por favor, preencha o ID do item.")
+
+
+def show_token_status():
+    """
+    Mostra o status dos tokens no Streamlit.
+    """
+    st.sidebar.subheader("🔐 Token Status")
+
+    def check_file_status(filepath, name):
+        try:
+            if os.path.exists(filepath):
+                with open(filepath, "r") as f:
+                    data = json.load(f)
+                    created_at = data.get("created_at")
+                    if created_at:
+                        created_datetime = datetime.fromisoformat(created_at)
+                        time_diff = datetime.now() - created_datetime
+                        is_recent = time_diff.total_seconds() < 3600
+
+                        status = "🟢 Recent" if is_recent else "🟡 Old"
+                        st.sidebar.text(f"{name}: {status}")
+                        st.sidebar.text(
+                            f"Created: {created_datetime.strftime('%H:%M:%S')}"
+                        )
+                    else:
+                        st.sidebar.text(f"{name}: 🟡 Legacy format")
+            else:
+                st.sidebar.text(f"{name}: 🔴 Missing")
+        except Exception as e:
+            st.sidebar.text(f"{name}: ❌ Error")
+
+    check_file_status(TOKEN_PATH, "Access Token")
+    check_file_status(REFRESH_TOKEN_PATH, "Refresh Token")
+
+
 def menu_dashboard():
     """
     Exibe o menu lateral do dashboard com opções de ações.
     Permite logout e redireciona para interfaces específicas com base na escolha.
     """
     st.title("Dashboard de Pedidos")
+
+    # Add token status display - ADDED
+    show_token_status()
 
     if st.sidebar.button("Sair"):
         clear_tokens()
@@ -431,7 +560,7 @@ def menu_dashboard():
     elif escolha == "Adicionar Item":
         adicionar_item_pedido()
     elif escolha == "Remover Item":
-        modificar_item_pedido("remover-item")
+        remover_item_pedido()  # FIXED: Use the correct function name
     elif escolha == "Finalizar Pedido":
         mudar_status_pedido("finalizar")
     elif escolha == "Cancelar Pedido":
@@ -443,6 +572,8 @@ def main():
     Função principal do app. Controla o estado de login e navegação
     entre o formulário de login e o dashboard.
     """
+    inject_custom_font()  # Add this line to apply custom font
+
     if "logado" not in st.session_state:
         st.session_state["logado"] = False
 
@@ -454,6 +585,7 @@ def main():
         login_form()
     else:
         menu_dashboard()
+        # show_token_status() is now called inside menu_dashboard()
 
 
 if __name__ == "__main__":

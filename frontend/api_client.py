@@ -3,6 +3,7 @@ import httpx
 import os
 import logging
 from utils import read_token
+# from api_client import decode_jwt
 
 # URL da API e caminho do token
 API_URL = "http://localhost:8000"

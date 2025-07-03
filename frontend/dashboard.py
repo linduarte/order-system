@@ -87,6 +87,7 @@ def api_get(endpoint):
         print("[ERRO EXCEÇÃO]", str(e))
         messagebox.showerror("Erro", str(e))
 
+
 def api_delete(endpoint):
     token = get_token()
     if not token:
@@ -138,7 +139,7 @@ def run():
             messagebox.showerror("Erro", "Usuário não encontrado.")
             return
 
-        # resultado = api_get(f"/pedidos/usuario_id={id_usuario}")  # Pass 
+        # resultado = api_get(f"/pedidos/usuario_id={id_usuario}")  # Pass
         resultado = api_get("/pedidos/listar/pedidos-usuario")
         if resultado:
             pedidos = "\n".join(
@@ -146,23 +147,26 @@ def run():
             )
             messagebox.showinfo("Pedidos", pedidos)
         else:
-            messagebox.showinfo("Pedidos", "Nenhum pedido encontrado.")  # Handle empty result
-            
+            messagebox.showinfo(
+                "Pedidos", "Nenhum pedido encontrado."
+            )  # Handle empty result
 
     def adicionar_item():
         id_pedido = simpledialog.askstring("Adicionar Item", "ID do Pedido:")
         quantidade = simpledialog.askinteger("Adicionar Item", "Quantidade:")
         sabor = simpledialog.askstring("Adicionar Item", "Sabor:")
-        tamanho = simpledialog.askstring("Adicionar Item", "Tamanho (Pequeno, Médio, Grande):")
+        tamanho = simpledialog.askstring(
+            "Adicionar Item", "Tamanho (Pequeno, Médio, Grande):"
+        )
         preco_unitario = simpledialog.askfloat("Adicionar Item", "Preço Unitário:")
 
         if id_pedido and quantidade and sabor and tamanho and preco_unitario:
             data = {
-            "quantidade": quantidade,
-            "sabor": sabor,
-            "tamanho": tamanho,
-            "preco_unitario": preco_unitario,
-        }
+                "quantidade": quantidade,
+                "sabor": sabor,
+                "tamanho": tamanho,
+                "preco_unitario": preco_unitario,
+            }
         try:
             result = api_post(f"/pedidos/pedido/adicionar-item/{id_pedido}", json=data)
             if result:
@@ -178,9 +182,14 @@ def run():
                 # Proceed with removing the item
                 result = api_delete(f"/pedidos/pedido/remover-item/{id_item_pedido}")
                 if result:
-                    messagebox.showinfo("Sucesso", "Item removido com sucesso do pedido.")
+                    messagebox.showinfo(
+                        "Sucesso", "Item removido com sucesso do pedido."
+                    )
                 else:
-                    messagebox.showerror("Erro", "Erro ao remover item. Verifique se o ID do item está correto.")
+                    messagebox.showerror(
+                        "Erro",
+                        "Erro ao remover item. Verifique se o ID do item está correto.",
+                    )
             except Exception as e:
                 print(f"[ERRO] Erro ao remover item: {e}")
                 messagebox.showerror("Erro", "Erro ao remover item.")
