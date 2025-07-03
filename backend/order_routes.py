@@ -10,6 +10,7 @@ from backend.dependencies import pegar_sessao, verificar_token
 from backend.schemas import PedidoSchema, ItemPedidoSchema, ResponsePedidoSchema
 from backend.models import Pedido, Usuario, ItemPedido
 from typing import List
+import logging
 
 
 order_router = APIRouter(
@@ -29,19 +30,29 @@ async def pedidos():
 async def criar_pedido(
     pedido_schema: PedidoSchema, session: Session = Depends(pegar_sessao)
 ):
-    """Cria um novo pedido no sistema.
+    """Cria um novo pedido no sistema."""
+    try:
+        logging.info(f"Creating pedido for user: {pedido_schema.usuario}")
 
-    Args:
-        pedido_schema (PedidoSchema): O esquema do pedido contendo o ID do usuário.
-        session (Session, optional): A sessão do banco de dados. Injetada por dependência.
+        novo_pedido = Pedido(usuario=pedido_schema.usuario, status="PENDENTE")
 
-    Returns:
-        dict: Uma mensagem de sucesso com o ID do pedido criado.
-    """
-    novo_pedido = Pedido(usuario=pedido_schema.id_usuario)
-    session.add(novo_pedido)
-    session.commit()
-    return {"mensagem": f"Pedido criado com sucesso. ID do pedido: {novo_pedido.id}"}
+        session.add(novo_pedido)
+        session.commit()
+        session.refresh(novo_pedido)
+
+        logging.info(f"Pedido created successfully with ID: {novo_pedido.id}")
+        return {
+            "mensagem": f"Pedido criado com sucesso. ID do pedido: {novo_pedido.id}"
+        }
+
+    except Exception as e:
+        session.rollback()
+        logging.error(f"Error creating pedido: {str(e)}")
+        logging.error(f"Error type: {type(e)}")
+        import traceback
+
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar pedido: {str(e)}")
 
 
 @order_router.post("/pedido/cancelar/{id_pedido}")
@@ -304,3 +315,14 @@ async def listar_pedidos(
         # Garante que uma lista vazia seja retornada se não houver pedidos
         return []
     return pedidos  # Retorna a lista de objetos Pedido diretamente.
+
+
+@order_router.post("/pedido/test")
+async def test_criar_pedido(session: Session = Depends(pegar_sessao)):
+    """Test endpoint to check basic functionality."""
+    try:
+        # Simple test without schema validation
+        return {"mensagem": "Test endpoint working", "status": "success"}
+    except Exception as e:
+        logging.error(f"Test endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

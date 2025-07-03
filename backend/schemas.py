@@ -36,7 +36,7 @@ class PedidoSchema(BaseModel):
         id_usuario (int): The ID of the user placing the order.
     """
 
-    id_usuario: int
+    usuario: int
 
     class Config:
         from_attributes = True

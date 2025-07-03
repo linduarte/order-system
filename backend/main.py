@@ -7,6 +7,13 @@ from fastapi import FastAPI
 from passlib.context import CryptContext
 from backend.auth_routes import auth_router
 from backend.order_routes import order_router
+from fastapi.security import OAuth2PasswordBearer
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 app = FastAPI(
@@ -17,6 +24,9 @@ app = FastAPI(
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 """CryptContext for handling password hashing using the bcrypt scheme."""
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/-form"
+)  # Placeholder for OAuth2 scheme, if needed later
 
 
 app.include_router(auth_router)
