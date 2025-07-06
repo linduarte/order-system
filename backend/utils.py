@@ -18,10 +18,15 @@ def save_token_to_file(
     try:
         timestamp = datetime.now().isoformat()
 
-        # Define paths using pathlib
+        # Define paths using pathlib with tokens folder in backend
         base_dir = Path(__file__).parent
-        access_token_path = base_dir.parent / "access_token.txt"
-        refresh_token_path = base_dir.parent / "refresh_token.txt"
+        tokens_dir = base_dir / "tokens"
+
+        # Create tokens directory if it doesn't exist
+        tokens_dir.mkdir(exist_ok=True)
+
+        access_token_path = tokens_dir / "access_token.txt"
+        refresh_token_path = tokens_dir / "refresh_token.txt"
 
         # Save access token with metadata
         access_data = {
