@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 from datetime import datetime
 import logging
 
@@ -18,10 +18,10 @@ def save_token_to_file(
     try:
         timestamp = datetime.now().isoformat()
 
-        # Define paths
-        base_dir = os.path.dirname(__file__)
-        access_token_path = os.path.join(base_dir, "..", "access_token.txt")
-        refresh_token_path = os.path.join(base_dir, "..", "refresh_token.txt")
+        # Define paths using pathlib
+        base_dir = Path(__file__).parent
+        access_token_path = base_dir.parent / "access_token.txt"
+        refresh_token_path = base_dir.parent / "refresh_token.txt"
 
         # Save access token with metadata
         access_data = {

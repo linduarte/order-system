@@ -4,13 +4,15 @@ This module loads environment variables and defines constants used throughout th
 such as secret keys, algorithms, token expiration times, and database URLs.
 """
 
-import os
+from pathlib import Path
 from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
+import os
 
 
-# Explicitly load the .env file
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+# Explicitly load the .env file using pathlib
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 """The secret key used for JWT encoding and decoding."""

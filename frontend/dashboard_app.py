@@ -2,7 +2,7 @@
 
 import streamlit as st
 import httpx
-import os
+from pathlib import Path
 import logging
 import json
 
@@ -13,9 +13,10 @@ import base64
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
 
-# Caminhos para salvar os tokens
-TOKEN_PATH = os.path.join(os.path.dirname(__file__), "access_token.txt")
-REFRESH_TOKEN_PATH = os.path.join(os.path.dirname(__file__), "refresh_token.txt")
+
+# Update token paths to use tokens folder
+TOKEN_PATH = Path(__file__).parent.parent / "tokens" / "access_token.txt"
+REFRESH_TOKEN_PATH = Path(__file__).parent.parent / "tokens" / "refresh_token.txt"
 API_URL = "http://localhost:8000"  # URL base do backend FastAPI
 
 
@@ -131,10 +132,10 @@ def clear_tokens():
     Remove os arquivos de tokens, efetivamente desconectando o usuário.
     """
     try:
-        if os.path.exists(TOKEN_PATH):
-            os.remove(TOKEN_PATH)
-        if os.path.exists(REFRESH_TOKEN_PATH):
-            os.remove(REFRESH_TOKEN_PATH)
+        if TOKEN_PATH.exists():
+            TOKEN_PATH.unlink()
+        if REFRESH_TOKEN_PATH.exists():
+            REFRESH_TOKEN_PATH.unlink()
 
         # Clear the caches when tokens are removed - ADD THESE LINES
         cached_token.clear()
@@ -501,31 +502,31 @@ def show_token_status():
     """
     st.sidebar.subheader("🔐 Token Status")
 
-    def check_file_status(filepath, name):
-        try:
-            if os.path.exists(filepath):
-                with open(filepath, "r") as f:
-                    data = json.load(f)
-                    created_at = data.get("created_at")
-                    if created_at:
-                        created_datetime = datetime.fromisoformat(created_at)
-                        time_diff = datetime.now() - created_datetime
-                        is_recent = time_diff.total_seconds() < 3600
 
-                        status = "🟢 Recent" if is_recent else "🟡 Old"
-                        st.sidebar.text(f"{name}: {status}")
-                        st.sidebar.text(
-                            f"Created: {created_datetime.strftime('%H:%M:%S')}"
-                        )
-                    else:
-                        st.sidebar.text(f"{name}: 🟡 Legacy format")
-            else:
-                st.sidebar.text(f"{name}: 🔴 Missing")
-        except Exception as e:
-            st.sidebar.text(f"{name}: ❌ Error")
+def check_file_status(filepath, name):
+    try:
+        if filepath.exists():  # ← Changed from os.path.exists(filepath)
+            with open(filepath, "r") as f:
+                data = json.load(f)
+                created_at = data.get("created_at")
+                if created_at:
+                    created_datetime = datetime.fromisoformat(created_at)
+                    time_diff = datetime.now() - created_datetime
+                    is_recent = time_diff.total_seconds() < 3600
 
-    check_file_status(TOKEN_PATH, "Access Token")
-    check_file_status(REFRESH_TOKEN_PATH, "Refresh Token")
+                    status = "🟢 Recent" if is_recent else "🟡 Old"
+                    st.sidebar.text(f"{name}: {status}")
+                    st.sidebar.text(f"Created: {created_datetime.strftime('%H:%M:%S')}")
+                else:
+                    st.sidebar.text(f"{name}: 🟡 Legacy format")
+        else:
+            st.sidebar.text(f"{name}: 🔴 Missing")
+    except Exception as e:
+        st.sidebar.text(f"{name}: ❌ Error")
+
+
+check_file_status(TOKEN_PATH, "Access Token")
+check_file_status(REFRESH_TOKEN_PATH, "Refresh Token")
 
 
 def menu_dashboard():
