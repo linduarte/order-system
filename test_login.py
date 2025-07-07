@@ -1,6 +1,4 @@
 import httpx
-import json
-
 
 API_URL = "http://localhost:8000"
 EMAIL = "ana@test.com"  # SUBSTITUA PELO SEU EMAIL DE LOGIN REAL

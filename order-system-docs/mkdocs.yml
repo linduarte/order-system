@@ -1,18 +1,21 @@
-# mkdocs.yml
+# Enhanced mkdocs.yml for Order Management System
 site_name: Order Management System
-site_description: Complete order management system with FastAPI and Streamlit
+site_description: Modern order management with FastAPI, Streamlit & UV
 site_author: Your Name
 site_url: https://yourusername.github.io/order-system
 
 # Repository
 repo_name: order-system
 repo_url: https://github.com/yourusername/order-system
+edit_uri: edit/main/docs/
 
-# Configuration
+# Custom theme for Order Management System
 theme:
   name: material
+  
+  # Color palette
   palette:
-    # Light mode
+    # Light mode - Professional blue
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: blue
@@ -20,38 +23,101 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-    # Dark mode
+    # Dark mode - Modern slate
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: blue
-      accent: light blue
+      accent: cyan
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
   
+  # Typography
+  font:
+    text: Inter
+    code: JetBrains Mono
+  
+  # Logo and favicon
+  # logo: assets/images/logo.svg
+  # favicon: assets/images/favicon.ico
+  
+  # Features
   features:
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.expand
+    - navigation.path
     - navigation.top
+    - navigation.tracking
     - search.highlight
+    - search.share
+    - search.suggest
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - toc.follow
+    - toc.integrate
 
-# Extensions
+# Custom styling
+extra_css:
+  - stylesheets/extra.css
+
+# Custom JavaScript
+extra_javascript:
+  - javascripts/extra.js
+
+# Extensions (keep your existing ones)
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - admonition
   - pymdownx.details
-  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - def_list
+  - footnotes
+  - meta
+  - toc:
+      permalink: true
 
-# Page tree
+# Extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/yourusername
+  
+  version:
+    provider: mike
+    default: latest
+  
+  status:
+    new: Recently added
+    deprecated: Deprecated
+
+# Analytics (optional)
+# extra:
+#   analytics:
+#     provider: google
+#     property: G-XXXXXXXXXX
+
+# Page tree (keep your existing structure)
 nav:
   - Home: index.md
   - Getting Started:
@@ -69,4 +135,3 @@ nav:
     - Docker: deployment/docker.md
     - Production: deployment/production.md
   - Contributing: contributing.md
-
