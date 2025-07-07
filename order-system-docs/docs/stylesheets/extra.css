@@ -1,0 +1,105 @@
+/* Order Management System Custom Styling */
+
+/* Root variables for consistent theming */
+:root {
+  --oms-primary: #1976d2;
+  --oms-secondary: #26c6da;
+  --oms-success: #4caf50;
+  --oms-warning: #ff9800;
+  --oms-error: #f44336;
+  --oms-gradient: linear-gradient(135deg, #1976d2 0%, #26c6da 100%);
+}
+
+/* Custom header with gradient */
+.md-header {
+  background: var(--oms-gradient);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.2);
+}
+
+/* Enhanced code blocks */
+.highlight {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(25, 118, 210, 0.1);
+}
+
+/* Custom admonitions */
+.md-typeset .admonition.tip {
+  border-color: var(--oms-success);
+}
+
+.md-typeset .admonition.warning {
+  border-color: var(--oms-warning);
+}
+
+.md-typeset .admonition.danger {
+  border-color: var(--oms-error);
+}
+
+/* Enhanced navigation */
+.md-nav__item--active > .md-nav__link {
+  font-weight: 600;
+  color: var(--oms-primary);
+  background: linear-gradient(90deg, rgba(25, 118, 210, 0.1), transparent);
+  border-radius: 6px;
+}
+
+/* Custom badges */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: var(--oms-success);
+  color: white;
+}
+
+.badge-warning {
+  background: var(--oms-warning);
+  color: white;
+}
+
+/* Enhanced tables */
+.md-typeset table:not([class]) {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom footer */
+.md-footer {
+  background: var(--oms-gradient);
+}
+
+/* Smooth animations */
+.md-nav__link {
+  transition: all 0.2s ease;
+}
+
+.md-nav__link:hover {
+  transform: translateX(4px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--oms-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--oms-secondary);
+}
