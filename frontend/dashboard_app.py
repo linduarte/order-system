@@ -1,14 +1,15 @@
 # dashboard_app.py
 
-import streamlit as st
-import httpx
-from pathlib import Path
-import logging
+import base64
 import json
+import logging
 
 # from api_client import decode_jwt
 from datetime import datetime
-import base64
+from pathlib import Path
+
+import httpx
+import streamlit as st
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +19,27 @@ logging.basicConfig(level=logging.INFO)
 TOKEN_PATH = Path(__file__).parent.parent / "tokens" / "access_token.txt"
 REFRESH_TOKEN_PATH = Path(__file__).parent.parent / "tokens" / "refresh_token.txt"
 API_URL = "http://localhost:8000"  # URL base do backend FastAPI
+
+
+def handle_frontend_error(operation: str, error: Exception, show_details: bool = False):
+    """
+    Centralized error handling for frontend operations.
+
+    Args:
+        operation: Description of what operation failed
+        error: The caught exception
+        show_details: Whether to show technical details to user
+    """
+    logging.error(f"Erro em {operation}: {type(error).__name__}: {error}")
+
+    if show_details:
+        st.error(f"Erro em {operation}: {error}")
+    else:
+        st.error(f"Erro em {operation}. Verifique os logs para mais detalhes.")
+
+    # Optional: Add technical details in expander for debugging
+    with st.expander("🔧 Detalhes Técnicos (Debug)"):
+        st.code(f"Tipo: {type(error).__name__}\nMensagem: {str(error)}")
 
 
 # Remove the import and add this function locally
@@ -63,7 +85,7 @@ def cached_token():
     Utiliza cache para evitar leituras frequentes do disco.
     """
     try:
-        with open(TOKEN_PATH, "r") as f:
+        with open(TOKEN_PATH) as f:
             data = json.load(f)
             return data.get("token", "").strip()
     except (FileNotFoundError, json.JSONDecodeError):
@@ -81,7 +103,7 @@ def cached_refresh_token():
     Utiliza cache para evitar leituras frequentes do disco.
     """
     try:
-        with open(REFRESH_TOKEN_PATH, "r") as f:
+        with open(REFRESH_TOKEN_PATH) as f:
             data = json.load(f)
             return data.get("token", "").strip()
     except (FileNotFoundError, json.JSONDecodeError):
@@ -122,7 +144,7 @@ def save_tokens(access_token: str, refresh_token: str):
             )  # FIXED: Use json.dump instead of f.write(json.dumps())
 
         logging.info("Tokens salvos com sucesso.")
-    except IOError as e:
+    except OSError as e:
         logging.error(f"Erro ao salvar tokens: {e}")
         st.error("Erro ao salvar os tokens. Tente novamente.")
 
@@ -352,8 +374,7 @@ def listar_pedidos():
         else:
             st.info("Nenhum pedido encontrado.")
     except Exception as e:
-        logging.error(f"Erro ao listar pedidos: {e}")
-        st.error("Erro ao listar pedidos.")
+        handle_frontend_error("listar pedidos", e, show_details=True)
 
 
 def adicionar_item_pedido():
@@ -506,7 +527,7 @@ def show_token_status():
 def check_file_status(filepath, name):
     try:
         if filepath.exists():  # ← Changed from os.path.exists(filepath)
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
                 created_at = data.get("created_at")
                 if created_at:

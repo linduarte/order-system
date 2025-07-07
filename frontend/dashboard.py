@@ -1,11 +1,12 @@
-import ttkbootstrap as tb
-from ttkbootstrap.constants import SUCCESS, PRIMARY, INFO, WARNING, SECONDARY, DANGER
-from tkinter import messagebox, simpledialog
-import httpx
-import os
 import base64
 import json
+import os
 import signal
+from tkinter import messagebox, simpledialog
+
+import httpx
+import ttkbootstrap as tb
+from ttkbootstrap.constants import DANGER, INFO, PRIMARY, SECONDARY, SUCCESS, WARNING
 
 API_URL = "http://localhost:8000"
 
@@ -36,7 +37,7 @@ def get_token():
     if not os.path.exists(TOKEN_PATH):
         messagebox.showerror("Erro", "Token não encontrado. Faça login novamente.")
         return None
-    with open(TOKEN_PATH, "r") as f:
+    with open(TOKEN_PATH) as f:
         token = f.read().strip()
         print(f"[DEBUG] Token lido: {token[:40]}...")  # Mostra só o começo
         return token

@@ -1,8 +1,10 @@
 # api_client.py
-import httpx
-import os
 import logging
+import os
+
+import httpx
 from utils import read_token
+
 # from api_client import decode_jwt
 
 # URL da API e caminho do token

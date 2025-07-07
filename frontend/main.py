@@ -1,10 +1,10 @@
 import os
+from tkinter import messagebox
+
 import httpx
 import ttkbootstrap as tb
-from ttkbootstrap.constants import SUCCESS
-from tkinter import messagebox
 from dashboard import run  # Certo!
-from typing import Optional
+from ttkbootstrap.constants import SUCCESS
 
 # Caminho absoluto para salvar o token
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -61,7 +61,7 @@ class LoginApp(tb.Window):
             print("[DEBUG] Erro inesperado:", str(e))
             messagebox.showerror("Erro", f"Erro inesperado: {e}")
 
-    def autenticar(self, email: str, senha: str) -> Optional[str]:
+    def autenticar(self, email: str, senha: str) -> str | None:
         response = httpx.post(
             f"{API_URL}/auth/login", json={"email": email, "senha": senha}
         )

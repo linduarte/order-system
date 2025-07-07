@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import patch
 import sys
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
 
 # Add parent directory to sys.path using pathlib
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -31,4 +32,3 @@ def test_requisicao_publica_sucesso(mock_request):
 def test_token_nao_encontrado(mock_token):
     with pytest.raises(Exception, match="Token n\\u00e3o encontrado"):
         req.requisicao_autenticada("GET", "/pedidos/listar")
-

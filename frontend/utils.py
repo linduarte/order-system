@@ -1,6 +1,6 @@
 # utils.py
-import os
 import logging
+import os
 
 
 # Função auxiliar para ler o token do arquivo
@@ -12,7 +12,7 @@ def read_token():
     """
     try:
         token_path = os.path.join(os.path.dirname(__file__), "access_token.txt")
-        with open(token_path, "r") as file:
+        with open(token_path) as file:
             return file.read().strip()
     except Exception as e:
         logging.error(f"Erro ao ler token: {e}")
