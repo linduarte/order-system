@@ -521,7 +521,7 @@ def check_file_status(filepath, name):
                     st.sidebar.text(f"{name}: 🟡 Legacy format")
         else:
             st.sidebar.text(f"{name}: 🔴 Missing")
-    except Exception as e:
+    except Exception:
         st.sidebar.text(f"{name}: ❌ Error")
 
 
