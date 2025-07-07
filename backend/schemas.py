@@ -5,7 +5,6 @@ ensuring data integrity and providing clear documentation for API endpoints.
 """
 
 from pydantic import BaseModel
-from typing import Optional, List
 
 
 class UsuarioSchema(BaseModel):
@@ -22,8 +21,8 @@ class UsuarioSchema(BaseModel):
     nome: str
     email: str
     senha: str
-    ativo: Optional[bool]
-    admin: Optional[bool]
+    ativo: bool | None
+    admin: bool | None
 
     class Config:
         from_attributes = True
@@ -89,7 +88,7 @@ class ResponsePedidoSchema(BaseModel):
     id: int
     status: str
     preco: float
-    itens: List[ItemPedidoSchema]
+    itens: list[ItemPedidoSchema]
 
     class Config:
         from_attributes = True

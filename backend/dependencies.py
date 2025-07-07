@@ -5,11 +5,11 @@ which are used as dependencies in various API routes.
 """
 
 from fastapi import Depends, HTTPException
-from backend.config import SECRET_KEY, ALGORITHM, oauth2_schema
-from backend.models import db
-from sqlalchemy.orm import sessionmaker, Session
-from backend.models import Usuario
-from jose import jwt, JWTError
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session, sessionmaker
+
+from backend.config import ALGORITHM, SECRET_KEY, oauth2_schema
+from backend.models import Usuario, db
 
 
 def pegar_sessao():
@@ -48,10 +48,10 @@ def verificar_token(
     try:
         dic_info = jwt.decode(token, SECRET_KEY, ALGORITHM)
         id_usuario = int(dic_info.get("sub"))
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
-            status_code=401, detail="Acesso Negado, verifique a validade do token"
-        )
+        status_code=401, detail="Acesso Negado, verifique a validade do token"
+    ) from e
     # verificar se o token é válido
     # extrair o ID do usuário do token
     usuario = session.query(Usuario).filter(Usuario.id == id_usuario).first()

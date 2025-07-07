@@ -4,11 +4,11 @@ This module loads environment variables and defines constants used throughout th
 such as secret keys, algorithms, token expiration times, and database URLs.
 """
 
+import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
-import os
-
 
 # Explicitly load the .env file using pathlib
 env_path = Path(__file__).parent / ".env"

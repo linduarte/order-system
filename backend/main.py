@@ -3,13 +3,15 @@
 It initializes the FastAPI app, configures password hashing, and includes API routers for authentication and order management.
 """
 
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
+
 from backend.auth_routes import auth_router
 from backend.order_routes import order_router
-from fastapi.security import OAuth2PasswordBearer
-from dotenv import load_dotenv
-import os
 
 load_dotenv()
 

@@ -4,14 +4,14 @@ This module defines API endpoints related to order creation, cancellation, item 
 It includes routes for both administrative and regular users, with appropriate authorization checks.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from backend.dependencies import pegar_sessao, verificar_token
-from backend.schemas import PedidoSchema, ItemPedidoSchema, ResponsePedidoSchema
-from backend.models import Pedido, Usuario, ItemPedido
-from typing import List
 import logging
 
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from backend.dependencies import pegar_sessao, verificar_token
+from backend.models import ItemPedido, Pedido, Usuario
+from backend.schemas import ItemPedidoSchema, PedidoSchema, ResponsePedidoSchema
 
 order_router = APIRouter(
     prefix="/pedidos", tags=["pedidos"], dependencies=[Depends(verificar_token)]
@@ -52,7 +52,7 @@ async def criar_pedido(
         import traceback
 
         logging.error(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Erro ao criar pedido: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar pedido: {str(e)}") from e
 
 
 @order_router.post("/pedido/cancelar/{id_pedido}")
@@ -296,7 +296,7 @@ async def visualizar_pedido(
 
 
 # Visualizar todos os pedidos de um usuário
-@order_router.get("/listar/pedidos-usuario", response_model=List[ResponsePedidoSchema])
+@order_router.get("/listar/pedidos-usuario", response_model=list[ResponsePedidoSchema])
 async def listar_pedidos(
     session: Session = Depends(pegar_sessao),
     usuario: Usuario = Depends(verificar_token),
@@ -325,4 +325,4 @@ async def test_criar_pedido(session: Session = Depends(pegar_sessao)):
         return {"mensagem": "Test endpoint working", "status": "success"}
     except Exception as e:
         logging.error(f"Test endpoint error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

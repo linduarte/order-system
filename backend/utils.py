@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
-from datetime import datetime
 import logging
+from datetime import datetime
+from pathlib import Path
 
 
 def save_token_to_file(
@@ -53,7 +53,7 @@ def save_token_to_file(
         else:
             logging.info(f"Access token salvo com sucesso em {timestamp}")
 
-    except IOError as e:
+    except OSError as e:
         logging.error(f"Erro ao salvar tokens: {e}")
     except Exception as e:
         logging.error(f"Erro inesperado ao salvar tokens: {e}")

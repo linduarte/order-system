@@ -4,20 +4,22 @@ This module defines API endpoints related to user authentication, including acco
 It uses JWT for token management and bcrypt for password hashing.
 """
 
+import logging
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
-from backend.models import Usuario
-from backend.dependencies import pegar_sessao, verificar_token
-from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
-from backend.schemas import UsuarioSchema, LoginSchema
-from sqlalchemy.orm import Session
-from jose import jwt, JWTError
-from datetime import datetime, timedelta, timezone
-from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
+from backend.dependencies import pegar_sessao, verificar_token
+from backend.models import Usuario
+from backend.schemas import LoginSchema, UsuarioSchema
 
 # Importe a função do seu novo arquivo utils.py
 from backend.utils import save_token_to_file
-import logging
 
 # Criação do contexto bcrypt para hashing e verificação de senhas
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -37,7 +39,7 @@ def criar_token(
     :return: O token JWT codificado.
     """
     try:
-        data_expiracao = datetime.now(timezone.utc) + duracao_token
+        data_expiracao = datetime.now(UTC) + duracao_token
         dic_info = {
             "sub": str(id_usuario),  # O \'sub\' é usado para identificar o usuário
             "exp": data_expiracao,  # Definir a data de expiração do token
@@ -48,10 +50,10 @@ def criar_token(
         return jwt_codificado
     except JWTError as e:
         logging.error(f"Erro ao criar o token JWT: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno ao criar o token")
+        raise HTTPException(status_code=500, detail="Erro interno ao criar o token") from e
     except Exception as e:
         logging.error(f"Erro inesperado ao criar o token JWT: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno inesperado")
+        raise HTTPException(status_code=500, detail="Erro interno inesperado") from e
 
 
 def autenticar_usuario(email, senha, session):
@@ -90,7 +92,7 @@ def autenticar_usuario(email, senha, session):
 
     except Exception as e:
         logging.error(f"Erro ao tentar autenticar usuário {email}: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao realizar a autenticação")
+        raise HTTPException(status_code=500, detail="Erro ao realizar a autenticação") from e
 
 
 @auth_router.get("/")
@@ -177,7 +179,7 @@ async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sess
         }
     except Exception as e:
         logging.error(f"Erro no login: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno ao realizar login")
+        raise HTTPException(status_code=500, detail="Erro interno ao realizar login") from e
 
 
 @auth_router.post("/login-form")

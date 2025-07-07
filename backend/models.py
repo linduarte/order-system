@@ -5,13 +5,13 @@ It also includes methods for interacting with these models, such as calculating 
 """
 
 from sqlalchemy import (
-    create_engine,
-    Column,
-    String,
-    Integer,
     Boolean,
+    Column,
     Float,
     ForeignKey,
+    Integer,
+    String,
+    create_engine,
 )
 from sqlalchemy.orm import declarative_base, relationship
 

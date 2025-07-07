@@ -1,10 +1,11 @@
-from logging.config import fileConfig
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-from alembic import context
-from backend.models import Base  # Import your SQLAlchemy Base class
-import sys
 import os
+import sys
+from logging.config import fileConfig
+
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+from backend.models import Base  # Import your SQLAlchemy Base class
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -21,7 +22,6 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 
 from backend.models import Base  # Import your SQLAlchemy Base class  # noqa: E402, F811
-
 
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
