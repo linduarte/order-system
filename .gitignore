@@ -58,5 +58,5 @@ coverage.xml
 .pytest_cache/
 
 # Ignore token
-backend/tokens/access_token.txt
-backend/tokens/refresh_token.txt
+tokens/access_token.txt
+tokens/refresh_token.txt
