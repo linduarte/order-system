@@ -14,7 +14,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from backend.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
-from backend.dependencies import pegar_sessao, verificar_token
+from backend.dependencies import pegar_sessao
 from backend.models import Usuario
 from backend.schemas import LoginSchema, UsuarioSchema
 
@@ -50,7 +50,9 @@ def criar_token(
         return jwt_codificado
     except JWTError as e:
         logging.error(f"Erro ao criar o token JWT: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno ao criar o token") from e
+        raise HTTPException(
+            status_code=500, detail="Erro interno ao criar o token"
+        ) from e
     except Exception as e:
         logging.error(f"Erro inesperado ao criar o token JWT: {e}")
         raise HTTPException(status_code=500, detail="Erro interno inesperado") from e
@@ -92,7 +94,9 @@ def autenticar_usuario(email, senha, session):
 
     except Exception as e:
         logging.error(f"Erro ao tentar autenticar usuário {email}: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao realizar a autenticação") from e
+        raise HTTPException(
+            status_code=500, detail="Erro ao realizar a autenticação"
+        ) from e
 
 
 @auth_router.get("/")
@@ -179,7 +183,9 @@ async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sess
         }
     except Exception as e:
         logging.error(f"Erro no login: {e}")
-        raise HTTPException(status_code=500, detail="Erro interno ao realizar login") from e
+        raise HTTPException(
+            status_code=500, detail="Erro interno ao realizar login"
+        ) from e
 
 
 @auth_router.post("/login-form")
@@ -211,15 +217,58 @@ async def login_form(
         return {"access_token": access_token, "token_type": "Bearer"}
 
 
-@auth_router.get("/refresh")
-async def use_refresh_token(usuario: Usuario = Depends(verificar_token)):
+@auth_router.post("/refresh")
+async def refresh_access_token(
+    refresh_token: str, session: Session = Depends(pegar_sessao)
+):
     """Atualiza o token de acesso usando um token de refresh válido.
 
     Args:
-        usuario (Usuario, optional): O objeto de usuário autenticado, obtido via dependência de verificação de token.
+        refresh_token (str): O refresh token válido fornecido pelo cliente.
+        session (Session): A sessão do banco de dados. Injetada por dependência.
+
+    Raises:
+        HTTPException: Se o refresh token for inválido, expirado ou o usuário não for encontrado.
 
     Returns:
         dict: Um dicionário contendo o novo access_token e o tipo de token.
     """
-    access_token = criar_token(usuario.id)
-    return {"access_token": access_token, "token_type": "Bearer"}
+    try:
+        # Decodificar o refresh token
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+
+        # Verificar se o usuário ainda existe no banco de dados
+        usuario = session.query(Usuario).filter(Usuario.id == user_id).first()
+        if not usuario:
+            logging.warning(f"Tentativa de refresh com usuário inexistente: {user_id}")
+            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+
+        # Verificar se o usuário ainda está ativo
+        if not usuario.ativo:
+            logging.warning(f"Tentativa de refresh com usuário inativo: {user_id}")
+            raise HTTPException(status_code=401, detail="Usuário inativo")
+
+        # Criar novo access token
+        new_access_token = criar_token(usuario.id)
+
+        # Salvar o novo access token (mantendo o mesmo refresh token)
+        save_token_to_file(new_access_token, refresh_token)
+
+        logging.info(f"Access token renovado com sucesso para usuário: {user_id}")
+
+        return {"access_token": new_access_token, "token_type": "Bearer"}
+
+    except JWTError as e:
+        logging.warning(f"Refresh token inválido ou expirado: {e}")
+        raise HTTPException(
+            status_code=401, detail="Refresh token inválido ou expirado"
+        ) from e
+    except Exception as e:
+        logging.error(f"Erro ao renovar access token: {e}")
+        raise HTTPException(
+            status_code=500, detail="Erro interno ao renovar token"
+        ) from e
