@@ -1,5 +1,0 @@
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzUyMDAxMzI3fQ.QmuOMGnUHvI_0Y0XkB40d0RMUjwpE6ZTqEW7aI-W8qc",
-  "created_at": "2025-07-08T15:32:07.378494",
-  "type": "access_token"
-}

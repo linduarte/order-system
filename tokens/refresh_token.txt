@@ -1,5 +1,0 @@
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1IiwiZXhwIjoxNzUyNjA0MzI3fQ.m9fyVF7gdFjrM46U5F1gsTU3m3PFDDpCzkv9cg2pubs",
-  "created_at": "2025-07-08T15:32:07.378494",
-  "type": "refresh_token"
-}
