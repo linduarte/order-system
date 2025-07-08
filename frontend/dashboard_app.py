@@ -365,67 +365,87 @@ def listar_pedidos():
     try:
         result = api_request("GET", "/pedidos/listar/pedidos-usuario")
         if result:
-            pedidos = result.get("pedidos", [])
+            # Fix: result is already a list, not a dict with 'pedidos' key
+            if isinstance(result, list):
+                pedidos = result
+            else:
+                # Fallback for dict response format
+                pedidos = result.get("pedidos", [])
+
             if not pedidos:
                 st.info("Você não tem nenhum pedido registrado.")
             else:
                 for pedido in pedidos:
-                    st.write(f"ID: {pedido['id']} | Status: {pedido['status']}")
+                    # Create expandable sections for each order
+                    with st.expander(f"📋 Pedido #{pedido.get('id', 'N/A')} - Status: {pedido.get('status', 'N/A')}"):
+                        col1, col2, col3 = st.columns(3)
+
+                        with col1:
+                            st.write(f"**ID:** {pedido.get('id', 'N/A')}")
+                            st.write(f"**Status:** {pedido.get('status', 'N/A')}")
+                        with col2:
+                            st.write(f"**Data:** {pedido.get('data_criacao', 'N/A')}")
+                            st.write(f"**Usuário:** {pedido.get('usuario', 'N/A')}")
+
+                        with col3:
+                            total = pedido.get('total', 0)
+                            st.write(f"**Total:** R$ {total:.2f}" if total else "**Total:** R$ 0.00")
+
+                        # Show items if available
+                        itens = pedido.get('itens', [])
+                        if itens:
+                            st.write("**Itens:**")
+                            for item in itens:
+                                st.write(f"- {item.get('sabor', 'N/A')} ({item.get('tamanho', 'N/A')}) - Qtd: {item.get('quantidade', 0)} - R$ {item.get('preco_unitario', 0):.2f}")
         else:
             st.info("Nenhum pedido encontrado.")
+
     except Exception as e:
         handle_frontend_error("listar pedidos", e, show_details=True)
-
 
 def adicionar_item_pedido():
     """
     Interface para adicionar um item a um pedido existente.
-    Requer o ID do pedido e dados do item como sabor, tamanho, quantidade e preço.
     """
     st.subheader("Adicionar Item ao Pedido")
     id_pedido = st.text_input("ID do Pedido:", key="adicionar_item_id_pedido")
-    quantidade = st.number_input(
-        "Quantidade:", min_value=1, key="adicionar_item_quantidade"
-    )
-    sabor = st.text_input("Sabor:", key="adicionar_item_sabor")
-    tamanho = st.selectbox(
-        "Tamanho:", ["Pequeno", "Médio", "Grande"], key="adicionar_item_tamanho"
-    )
-    preco_unitario = st.number_input(
-        "Preço Unitário:",
-        min_value=0.0,
-        format="%.2f",
-        key="adicionar_item_preco_unitario",
-    )
+
+    # Item details
+    col1, col2 = st.columns(2)
+    with col1:
+        sabor = st.text_input("Sabor:", key="adicionar_item_sabor")
+        tamanho = st.selectbox("Tamanho:", ["P", "M", "G"], key="adicionar_item_tamanho")
+
+    with col2:
+        quantidade = st.number_input("Quantidade:", min_value=1, value=1, key="adicionar_item_quantidade")
+        preco_unitario = st.number_input("Preço Unitário:", min_value=0.01, value=10.00, step=0.50, key="adicionar_item_preco")
 
     if st.button("Adicionar Item", key="adicionar_item_btn"):
-        if id_pedido and quantidade and sabor and tamanho and preco_unitario:
+        if id_pedido and sabor:
             try:
+                # Check if order exists and is modifiable
                 order = api_request("GET", f"/pedidos/pedido/{id_pedido}")
                 if order and order.get("status") in ["FINALIZADO", "CANCELADO"]:
-                    st.error(
-                        "Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO."
-                    )
+                    st.error("Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO.")
                     return
 
                 data = {
-                    "quantidade": quantidade,
                     "sabor": sabor,
                     "tamanho": tamanho,
-                    "preco_unitario": preco_unitario,
+                    "quantidade": int(quantidade),
+                    "preco_unitario": float(preco_unitario)
                 }
-                result = api_request(
-                    "POST",
-                    f"/pedidos/pedido/adicionar-item/{id_pedido}",
-                    json_data=data,
-                )
+
+                result = api_request("POST", f"/pedidos/pedido/adicionar-item/{id_pedido}", json_data=data)
                 if result:
-                    st.success("Item adicionado com sucesso ao pedido.")
+                    st.success("Item adicionado com sucesso!")
+                else:
+                    st.error("Erro ao adicionar item.")
+
             except Exception as e:
-                logging.error(f"Erro ao adicionar item: {e}")
-                st.error("Erro ao adicionar item.")
+                handle_frontend_error("adicionar item", e, show_details=True)
         else:
-            st.warning("Por favor, preencha todos os campos do item.")
+            st.warning("Preencha o ID do Pedido e o Sabor do item.")
 
 
 def modificar_item_pedido(endpoint_acao: str):
