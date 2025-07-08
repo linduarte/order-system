@@ -174,7 +174,7 @@ async def login(login_schema: LoginSchema, session: Session = Depends(pegar_sess
         refresh_token = criar_token(usuario.id, duracao_token=timedelta(days=7))
 
         # Chame a função para salvar o access_token no arquivo.
-        save_token_to_file(access_token)
+        save_token_to_file(access_token, refresh_token)
 
         return {
             "access_token": access_token,
