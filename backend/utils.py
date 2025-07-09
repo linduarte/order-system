@@ -5,7 +5,9 @@ from pathlib import Path
 
 
 def save_token_to_file(
-    access_token: str, refresh_token: str = None, filename: str = "access_token.txt"
+    access_token: str,
+    refresh_token: str | None = None,
+    filename: str = "access_token.txt",
 ):
     """
     Salva os tokens de acesso e refresh em arquivos JSON com timestamp.
@@ -18,9 +20,9 @@ def save_token_to_file(
     try:
         timestamp = datetime.now().isoformat()
 
-        # Define paths using pathlib with tokens folder in backend
-        base_dir = Path(__file__).parent
-        tokens_dir = base_dir / "tokens"
+        # Define paths using pathlib with tokens folder in project root
+        base_dir = Path(__file__).parent.parent  # Go up to project root
+        tokens_dir = base_dir / "tokens"  # project-root/tokens/
 
         # Create tokens directory if it doesn't exist
         tokens_dir.mkdir(exist_ok=True)
