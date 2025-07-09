@@ -160,8 +160,8 @@ def clear_tokens():
             REFRESH_TOKEN_PATH.unlink()
 
         # Clear the caches when tokens are removed - ADD THESE LINES
-        cached_token.clear()
-        cached_refresh_token.clear()
+        cached_token.clear()  # type: ignore
+        cached_refresh_token.clear()  # type: ignore
 
         logging.info("Tokens removidos com sucesso.")
     except Exception as e:
@@ -198,8 +198,8 @@ def refresh_access_token_and_retry():
             }
             with open(TOKEN_PATH, "w") as f:
                 json.dump(access_data, f, indent=2)
-            cached_token.clear()
-            cached_refresh_token.clear()  # ← Add this line
+            cached_token.clear()  # type: ignore
+            cached_refresh_token.clear()  # type: ignore ← Add this line
             logging.info("Access token renovado com sucesso.")
             return True
         else:
@@ -217,7 +217,7 @@ def refresh_access_token_and_retry():
         return False
 
 
-def api_request(method: str, endpoint: str, json_data: dict = None):
+def api_request(method: str, endpoint: str, json_data: dict | None = None):
     """
     Realiza uma requisição à API com autenticação e lógica de renovação de token.
 
@@ -307,8 +307,8 @@ def login_backend(email, senha):
             save_tokens(access_token, refresh_token)
 
             # Clear the caches to force fresh token reading - ADD THESE LINES
-            cached_token.clear()
-            cached_refresh_token.clear()
+            cached_token.clear()  # type: ignore
+            cached_refresh_token.clear()  # type: ignore
 
             logging.info("Login bem-sucedido.")
             return True
@@ -377,7 +377,9 @@ def listar_pedidos():
             else:
                 for pedido in pedidos:
                     # Create expandable sections for each order
-                    with st.expander(f"📋 Pedido #{pedido.get('id', 'N/A')} - Status: {pedido.get('status', 'N/A')}"):
+                    with st.expander(
+                        f"📋 Pedido #{pedido.get('id', 'N/A')} - Status: {pedido.get('status', 'N/A')}"
+                    ):
                         col1, col2, col3 = st.columns(3)
 
                         with col1:
@@ -388,20 +390,27 @@ def listar_pedidos():
                             st.write(f"**Usuário:** {pedido.get('usuario', 'N/A')}")
 
                         with col3:
-                            total = pedido.get('total', 0)
-                            st.write(f"**Total:** R$ {total:.2f}" if total else "**Total:** R$ 0.00")
+                            total = pedido.get("total", 0)
+                            st.write(
+                                f"**Total:** R$ {total:.2f}"
+                                if total
+                                else "**Total:** R$ 0.00"
+                            )
 
                         # Show items if available
-                        itens = pedido.get('itens', [])
+                        itens = pedido.get("itens", [])
                         if itens:
                             st.write("**Itens:**")
                             for item in itens:
-                                st.write(f"- {item.get('sabor', 'N/A')} ({item.get('tamanho', 'N/A')}) - Qtd: {item.get('quantidade', 0)} - R$ {item.get('preco_unitario', 0):.2f}")
+                                st.write(
+                                    f"- {item.get('sabor', 'N/A')} ({item.get('tamanho', 'N/A')}) - Qtd: {item.get('quantidade', 0)} - R$ {item.get('preco_unitario', 0):.2f}"
+                                )
         else:
             st.info("Nenhum pedido encontrado.")
 
     except Exception as e:
         handle_frontend_error("listar pedidos", e, show_details=True)
+
 
 def adicionar_item_pedido():
     """
@@ -414,11 +423,21 @@ def adicionar_item_pedido():
     col1, col2 = st.columns(2)
     with col1:
         sabor = st.text_input("Sabor:", key="adicionar_item_sabor")
-        tamanho = st.selectbox("Tamanho:", ["P", "M", "G"], key="adicionar_item_tamanho")
+        tamanho = st.selectbox(
+            "Tamanho:", ["P", "M", "G"], key="adicionar_item_tamanho"
+        )
 
     with col2:
-        quantidade = st.number_input("Quantidade:", min_value=1, value=1, key="adicionar_item_quantidade")
-        preco_unitario = st.number_input("Preço Unitário:", min_value=0.01, value=10.00, step=0.50, key="adicionar_item_preco")
+        quantidade = st.number_input(
+            "Quantidade:", min_value=1, value=1, key="adicionar_item_quantidade"
+        )
+        preco_unitario = st.number_input(
+            "Preço Unitário:",
+            min_value=0.01,
+            value=10.00,
+            step=0.50,
+            key="adicionar_item_preco",
+        )
 
     if st.button("Adicionar Item", key="adicionar_item_btn"):
         if id_pedido and sabor:
@@ -426,17 +445,23 @@ def adicionar_item_pedido():
                 # Check if order exists and is modifiable
                 order = api_request("GET", f"/pedidos/pedido/{id_pedido}")
                 if order and order.get("status") in ["FINALIZADO", "CANCELADO"]:
-                    st.error("Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO.")
+                    st.error(
+                        "Não é possível adicionar itens a pedidos FINALIZADO ou CANCELADO."
+                    )
                     return
 
                 data = {
                     "sabor": sabor,
                     "tamanho": tamanho,
                     "quantidade": int(quantidade),
-                    "preco_unitario": float(preco_unitario)
+                    "preco_unitario": float(preco_unitario),
                 }
 
-                result = api_request("POST", f"/pedidos/pedido/adicionar-item/{id_pedido}", json_data=data)
+                result = api_request(
+                    "POST",
+                    f"/pedidos/pedido/adicionar-item/{id_pedido}",
+                    json_data=data,
+                )
                 if result:
                     st.success("Item adicionado com sucesso!")
                 else:
@@ -500,7 +525,12 @@ def mudar_status_pedido(acao: str):
             try:
                 result = api_request("POST", f"/pedidos/pedido/{acao}/{id_pedido}")
                 if result:
-                    st.success(f"Pedido {acao} com sucesso.")
+                    # Map actions to proper past participle forms
+                    mensagens = {
+                        "cancelar": "Pedido cancelado com sucesso!",
+                        "finalizar": "Pedido finalizado com sucesso!",
+                    }
+                    st.success(mensagens.get(acao, f"Pedido {acao} com sucesso!"))
             except Exception as e:
                 logging.error(f"Erro ao {acao} pedido: {e}")
                 st.error(f"Erro ao {acao} pedido.")
