@@ -178,4 +178,4 @@ Com este guia você será capaz de:
 
 - Configurar backend com FastAPI/Uvicorn
 - Executar frontend com Streamlit
-- Diagnosticar e corrigir problemas com facilidade
+- Diagnosticar e corrigir problemas com facilidade#Test
