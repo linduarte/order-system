@@ -48,6 +48,7 @@ def get_user_id():
     if not token:
         return None
     payload = decode_jwt(token)
+    # pyrefly: ignore  # no-matching-overload
     return int(payload.get("sub")) if payload.get("sub") else None
 
 
@@ -209,24 +210,31 @@ def run():
         print("[INFO] Closing application...")
         app.destroy()  # Gracefully close the Tkinter window
 
+    # pyrefly: ignore  # unexpected-keyword
     tb.Button(app, text="Criar Pedido", command=criar_pedido, bootstyle=SUCCESS).pack(
         pady=10
     )
     tb.Button(
+        # pyrefly: ignore  # unexpected-keyword
         app, text="Listar Meus Pedidos", command=listar_pedidos, bootstyle=PRIMARY
     ).pack(pady=10)
+    # pyrefly: ignore  # unexpected-keyword
     tb.Button(app, text="Adicionar Item", command=adicionar_item, bootstyle=INFO).pack(
         pady=10
     )
+    # pyrefly: ignore  # unexpected-keyword
     tb.Button(app, text="Remover Item", command=remover_item, bootstyle=WARNING).pack(
         pady=10
     )
     tb.Button(
+        # pyrefly: ignore  # unexpected-keyword
         app, text="Finalizar Pedido", command=finalizar_pedido, bootstyle=SECONDARY
     ).pack(pady=10)
     tb.Button(
+        # pyrefly: ignore  # unexpected-keyword
         app, text="Cancelar Pedido", command=cancelar_pedido, bootstyle=DANGER
     ).pack(pady=10)
+    # pyrefly: ignore  # unexpected-keyword
     tb.Button(app, text="Fechar", command=close_app, bootstyle="danger").pack(
         pady=10
     )  # Add Close button

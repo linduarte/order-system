@@ -3,6 +3,7 @@ from tkinter import messagebox
 
 import httpx
 import ttkbootstrap as tb
+# pyrefly: ignore  # import-error
 from dashboard import run  # Certo!
 from ttkbootstrap.constants import SUCCESS
 
@@ -22,14 +23,17 @@ class LoginApp(tb.Window):
 
     def create_widgets(self):
         tb.Label(self, text="Email:").pack(pady=5)
+        # pyrefly: ignore  # implicitly-defined-attribute
         self.entry_email = tb.Entry(self, width=30)
         self.entry_email.pack(pady=5)
 
         tb.Label(self, text="Senha:").pack(pady=5)
+        # pyrefly: ignore  # implicitly-defined-attribute
         self.entry_senha = tb.Entry(self, show="*", width=30)
         self.entry_senha.pack(pady=5)
 
         tb.Button(
+            # pyrefly: ignore  # unexpected-keyword
             self, text="Entrar", bootstyle=SUCCESS, command=self.fazer_login
         ).pack(pady=15)
 

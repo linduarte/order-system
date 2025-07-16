@@ -6,6 +6,7 @@ import pytest
 
 # Add parent directory to sys.path using pathlib
 sys.path.insert(0, str(Path(__file__).parent.parent))
+# pyrefly: ignore  # missing-module-attribute
 from frontend import http_requests as req
 
 
