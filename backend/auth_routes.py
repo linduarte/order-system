@@ -236,6 +236,7 @@ async def refresh_access_token(
     try:
         # Decodificar o refresh token
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        # pyrefly: ignore  # no-matching-overload
         user_id = int(payload.get("sub"))
 
         if user_id is None:

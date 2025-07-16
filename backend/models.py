@@ -58,7 +58,9 @@ class Usuario(Base):
         self.nome = nome
         self.email = email
         self.senha = senha
+        # pyrefly: ignore  # bad-assignment
         self.ativo = ativo
+        # pyrefly: ignore  # bad-assignment
         self.admin = admin
 
 
@@ -90,7 +92,9 @@ class Pedido(Base):
             preco (float, optional): The initial price of the order. Defaults to 0.
         """
         self.usuario = usuario
+        # pyrefly: ignore  # bad-assignment
         self.preco = preco
+        # pyrefly: ignore  # bad-assignment
         self.status = status
 
     def calcular_preco(self):
@@ -98,6 +102,7 @@ class Pedido(Base):
 
         The `preco` attribute is updated by summing the quantities multiplied by the unit prices of all associated `ItemPedido` instances.
         """
+        # pyrefly: ignore  # bad-assignment
         self.preco = sum(item.quantidade * item.preco_unitario for item in self.itens)
 
 

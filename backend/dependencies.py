@@ -47,6 +47,7 @@ def verificar_token(
     """
     try:
         dic_info = jwt.decode(token, SECRET_KEY, ALGORITHM)
+        # pyrefly: ignore  # no-matching-overload
         id_usuario = int(dic_info.get("sub"))
     except JWTError as e:
         raise HTTPException(
